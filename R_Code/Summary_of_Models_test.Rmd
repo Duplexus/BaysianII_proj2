@@ -1,0 +1,234 @@
+#### LMM
+```{r }
+plot(normal_rand$samples)
+effectiveSize(normal_rand$samples) 
+#Tine-series SE is monte carlo standard error var von dem ding durch samplsize
+summary(normal_rand$samples)
+normal_rand$WAIC$WAIC
+geweke.diag(normal_rand$samples)
+geweke.plot(normal_rand$samples)
+gelman.diag(normal_rand$samples, confidence = 0.95)
+gelman.plot(normal_rand$samples, confidence = 0.95)
+autocorr.diag(normal_rand$samples)
+```
+
+
+
+
+
+```{r echo=F}
+source("Bayes1_lognormal_jags.R")
+```
+#### Results 
+Just the Plots of the Posterior curves of the Parameters and there summarys
+
+```{r}
+attributes(lognorm_mcmc)
+summary.mcmc.list(lognorm_mcmc,)
+summary(lognorm)
+
+plot(lognorm)
+print(lognorm)
+cat("second kind of the plots seen before")
+plot(lognorm_mcmc)
+
+```
+
+
+#### Diagnostics
+##### Convergence checks
+First Gelman and Rubin and Geweke Plots are created, looks kind of ok in my eyes
+```{r}
+print("gelman diag")
+gelman.diag(lognorm_mcmc, confidence = 0.95)
+gelman.plot(lognorm_mcmc, confidence = 0.95)
+print("geweke diag")
+geweke.diag(lognorm_mcmc)
+geweke.plot(lognorm_mcmc)
+
+# dynamic geweke for single chain
+gw <- geweke.plot(lognorm_mcmc)
+m <- gw[["z"]][, , 1]
+df <- as.data.frame(m)
+
+names(df)<- c("beta0","beta1","beta2", "sigma")
+it_ini <- 3000
+it_fin <- 5500
+df['m'] = c(1:20)/20*(it_fin-it_ini)+it_ini
+df2 <- data.frame(m = df$m,                            
+                       Z = c(df$beta0, df$beta1, df$beta2, df$sigma),
+                       group = c(rep("beta0", nrow(df)),
+                                 rep("beta1", nrow(df)),
+                                 rep("beta2", nrow(df)),
+                                 rep("sigma", nrow(df))))
+g3<-ggplot(df2, aes(m, Z, col=group))
+g3 + geom_point() + geom_hline(aes(yintercept=2),color="black",linetype="dashed") +
+  geom_hline(aes(yintercept=-2),color="black",linetype="dashed")+
+  labs(title="Geweke diagnostic for chain 1",y="Z-score",x="First iteration in segment")
+```
+
+##### DIC
+
+```{r}
+extract.runjags(lognorm, "dic")
+```
+##### CPO and PPo
+I always unluckly wrote PPO instead of CPO so it is the same in this document
+ 
+
+```{r}
+subset_pred <- grepl("ppo\\[", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+mcmc_subset <- get_values(lognorm_mcmc_rep,subset_pred)
+#cpo (leave one out Prediction)
+cpo <- (apply(1/as.matrix(mcmc_subset),2,mean))^-1
+icpo <- cpo^-1
+#ppo (without leave one out, therefore violates liklihoodprinciple(dont predict with same data))
+ppo <- (apply(as.matrix(mcmc_subset),2,mean))
+ippo <- ppo^-1
+
+plot(icpo)
+plot(ippo)
+#which y are thebiggest
+matrix(order(icpo,decreasing = T),ncol = 14, nrow = 10, byrow = T)
+#Table 2 
+matrix(order(ippo,decreasing = T),ncol = 14, nrow = 10, byrow = T)
+
+
+LPLM <- mean(log(cpo))
+LPLM
+#2.) extract the res values 
+subset_pred <- grepl("res\\[", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+mcmc_subset <- get_values(lognorm_mcmc_rep,subset_pred)
+#how look the average residuals in the log world?
+hist(apply(mcmc_subset,2,mean), breaks = 20)
+
+```
+
+##### PPC and more summary
+PPC how often true y in 95% intervall
+```{r}
+subset_pred <- grepl("y_rep\\[", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+mcmc_subset <- get_values(lognorm_mcmc_rep,subset_pred)
+
+# # mcmc_subset
+# #how often are the values bigger or smallen than the predicted ones
+# max(apply(apply(mcmc_subset,1,function(x){x > Grub$value}),2,mean))
+# 
+# #how do the distribution look like comapred to the origninal one
+# summary(mcmc_subset[,1])
+# hist(Grub$value)
+# hist(mcmc_subset[1,],breaks = 20)
+
+# how extreme are the predicted values compared to the original ones
+mean(apply(mcmc_subset,1,function(x){sum(x >= 12)  >= (sum(Grub$value >=12))}))
+mean(apply(mcmc_subset,1,function(x){sum(x >= 6)  >= (sum(Grub$value >=6))}))
+mean(apply(mcmc_subset,1,function(x){sum(x <= 2)  >= (sum(Grub$value <= 2))}))
+```
+
+##### DIC Manual
+This is just for comparison to the automatic calculated one. Used later for the interval censored part
+```{r}
+#3.) Get the DIC running
+#https://en.wikipedia.org/wiki/Deviance_information_criterion
+
+
+subset_pred <- grepl("Deviance", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+mcmc_subset <- get_values(lognorm_mcmc_rep,subset_pred)
+mcmc_subset_dic<- mcmc_subset
+md <- mean(mcmc_subset_dic)
+#This is the calculation of Pd but somehow it does not work for the random effectmodels for me, probably I have made some mistake, but I cant find it. So I switch to pv instead, https://www.mrc-bsu.cam.ac.uk/software/bugs/the-bugs-project-dic/ which is also kinda recomended and is the variance of the posterior divided by 2, comes from some chisquare approx. Explaination on the link can be found. First still the implementation of BIC is written down.
+a <- vector()
+subset_pred <- grepl("beta0", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+a["beta0"] <- mean(get_values(lognorm_mcmc_rep,subset_pred))
+
+subset_pred <- grepl("beta2", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+a["beta2"] <- mean(get_values(lognorm_mcmc_rep,subset_pred))
+
+subset_pred <- grepl("beta1", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+a["beta1"] <- mean(get_values(lognorm_mcmc_rep,subset_pred))
+
+subset_pred <- grepl("tau", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+a["tau"] <- mean(get_values(lognorm_mcmc_rep,subset_pred))
+
+pd <- md - (-2 *sum(log(dlnorm(Grub$value,a["beta0"]+a["beta1"]*Grub$grubsize 
+                   + a["beta2"]*Grub$group,sqrt(1/a["tau"])))))
+pv <- var(mcmc_subset_dic)/2
+c(pd,md,pd+md)
+c(pv,md,pv+md)
+
+```
+
+##### Plot the Model
+
+```{r}
+a <- vector()
+subset_pred <- grepl("beta0", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+a["beta0"] <- median(get_values(lognorm_mcmc_rep,subset_pred))
+
+subset_pred <- grepl("beta2", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+a["beta2"] <- median(get_values(lognorm_mcmc_rep,subset_pred))
+
+subset_pred <- grepl("beta1", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+a["beta1"] <- median(get_values(lognorm_mcmc_rep,subset_pred))
+
+subset_pred <- grepl("tau", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+a["tau"] <- median(get_values(lognorm_mcmc_rep,subset_pred))
+
+
+# subset_pred <- grepl("y\\[", dimnames(lognorm_mcmc_rep[[1]])[[2]])
+# mcmc_subset_y <- get_values(lognorm_mcmc_rep,subset_pred)
+
+size <- seq(-2,4,length.out = 140)
+#group 2 beta 2 is the group
+gr1_low <- qlnorm(0.025,a["beta0"]+a["beta1"]*size + a["beta2"]*0,sqrt(1/a["tau"]))
+gr1_mid <- qlnorm(0.5,a["beta0"]+a["beta1"]*size + a["beta2"]*0,sqrt(1/a["tau"]))
+gr1_up <- qlnorm(0.975,a["beta0"]+a["beta1"]*size + a["beta2"]*0,sqrt(1/a["tau"]))
+gr2_low <- qlnorm(0.025,a["beta0"]+a["beta1"]*size + a["beta2"]*1,sqrt(1/a["tau"]))
+gr2_mid <- qlnorm(0.5,a["beta0"]+a["beta1"]*size + a["beta2"]*1,sqrt(1/a["tau"]))
+gr2_up <- qlnorm(0.975,a["beta0"]+a["beta1"]*size + a["beta2"]*1,sqrt(1/a["tau"]))
+# 
+
+# y_sample <- apply(mcmc_subset,2,mean)
+# Grub$grubsize, Grub$value
+# Grub2$grubsize, y_sample
+Grub2 <- Grub
+plot(Grub$grubsize, Grub$value,  pch = 19,ylim = c(0,20), col = (Grub$group + 2), lwd = 1.5,
+      xlab = "Days", cex.lab = 1.8,
+     ylab = "Overall survival probability")
+lines(size,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(size,gr1_mid, col = 2, lwd = 3)
+lines(size,gr1_up, col = 2,lty = 2, lwd = 3)
+lines(size,gr2_low, col = 3,lty = 2, lwd = 3)
+lines(size,gr2_mid, col = 3, lwd = 3)
+lines(size,gr2_up, col = 3, lwd = 3,lty = 2)
+legend("topright", legend = c("SS", "HB"),lwd = 3,
+               lty = 1,col = c(2,3),
+               title = "Groups")
+
+
+pdf("..\\graphics\\Plot3.pdf", width = 7, height = 5)
+plot(Grub$grubsize, Grub$value,  pch = 19,ylim = c(0,20), col = (Grub2$group + 2), lwd = 1.5,
+      xlab = "Days", cex.lab = 1.4,
+     ylab = "Overall survival probability")
+lines(size,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(size,gr1_mid, col = 2, lwd = 3)
+lines(size,gr1_up, col = 2,lty = 2, lwd = 3)
+lines(size,gr2_low, col = 3,lty = 2, lwd = 3)
+lines(size,gr2_mid, col = 3, lwd = 3)
+lines(size,gr2_up, col = 3, lwd = 3,lty = 2)
+legend("topright", legend = c("SS", "HB"),lwd = 3,
+               lty = 1,col = c(2,3),
+               title = "Groups")
+dev.off()
+```
+##### Sensitivity
+```{r}
+source("Bayes1_lognormal_jags_sens.R")
+
+```
+The results are really simmular despite the second one has a really bad initilitation
+```{r}
+lognorm$summaries[,4]
+lognorm_sens$summaries[,4]
+lognorm_sens2$summaries[,4]
+```

@@ -14,6 +14,7 @@ age_real <- data$age
 day_real <- data$day
 data$age <- data$age - mean(data$age)
 data$day <- data$day - mean(data$day)
+saveRDS(data, file = "data\\AIdataset_normalized.Rds")
 #### some Plots ####
 library(ggplot2)
 ggplot(data,aes(x=day_real,y=sofa)) + stat_binhex(na.rm = T) + scale_fill_gradient(low = "blue", high = "green")

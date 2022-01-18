@@ -49,13 +49,3 @@ samples <- nimbleMCMC(
   nburnin = 2000,
   thin = 5)
 
-library(installr)
-
-updateR()
-
-Sys.getenv('PATH')
-
-[1] "C:\\Program Files\\R\\R-4.0.5\\bin\\x64;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\javapath;C:\\ProgramData\\Anaconda3;C:\\ProgramData\\Anaconda3\\Library\\mingw-w64\\bin;C:\\ProgramData\\Anaconda3\\Library\\usr\\bin;C:\\ProgramData\\Anaconda3\\Library\\bin;C:\\ProgramData\\Anaconda3\\Scripts;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\R\\R-4.0.5\\bin;C:\\Program Files (x86)\\Windows Live\\Shared;C:\\Users\\valne\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\valne\\AppData\\Local\\Programs\\MiKTeX\\miktex\\bin\\x64\\;C:\\Users\\valne\\AppData\\Local\\gitkraken\\bin"
-installed.packages()
-
-.libPaths()
