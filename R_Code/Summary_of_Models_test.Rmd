@@ -15,7 +15,7 @@ autocorr.diag(normal_rand$samples)
 
 
 
-
+#Old thing but for reference reasons still left over 
 ```{r echo=F}
 source("Bayes1_lognormal_jags.R")
 ```

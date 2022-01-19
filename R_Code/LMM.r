@@ -41,11 +41,5 @@ normal_rand <- nimbleMCMC(
   samplesAsCodaMCMC = T, samples = T, # get an coda object instead of plain values
   WAIC = T ) # get the WAIC
 
-plot(normal_rand)
-effectiveSize(normal_rand) 
-#Tine-series SE is monte carlo standard error var von dem ding durch samplsize
-summary(normal_rand$samples)
-normal_rand$WAIC$WAIC
-geweke.diag(normal_rand$samples)
-geweke.plot(normal_rand$samples)
+
 
