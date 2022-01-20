@@ -9,7 +9,7 @@ model.inits <- list(list(tau=2,sigma2_b0 =2, beta0=1, beta1 = 1,beta2 = 1,b0 = c
                     list(tau=20,sigma2_b0 = 1, beta0=10, beta1 = 10,beta2 = 10, b0 =  rnorm(length(unique(data$id)),0,30)),
                     list(tau=15, sigma2_b0 =2, beta0=20, beta1 = -10,beta2 = -15, b0 =  runif(length(unique(data$id)),0,10))
 )
-parameters = c("sigma2", "beta0", "beta1", "beta2","sigma2_b0","tau")
+parameters = c("sigma2", "beta0", "beta1", "beta2","sigma2_b0","tau","y_pred")
 
 model.constants <- list( N = length(data$sofa), x1 = data$age,
                     id = data$id, x2 = data$day,  Nsubj = length(unique(data$id)))
@@ -18,6 +18,7 @@ model.data <- list(y = data$sofa)
 model.function <- nimbleCode({
   for (i in 1:N){
     y[i] ~ dnorm(mu[i], tau)
+    y_pred[i] ~ dnorm(mu[i], tau)
     mu[i] <- beta0 + beta1 *x1[i] + beta2 *x2[i]+ b0[id[i]]
   }
   #priors

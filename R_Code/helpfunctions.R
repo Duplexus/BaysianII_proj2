@@ -57,22 +57,19 @@ subset_coda_params <- function(variable, data){
 
   return(data)
 }
+
 "
 data  output of coda
 !!ATTENTION it is assumed WAIC is calculated, else you need to modify
 "
 
 summarise_default <- function(data){
-  WAIC <- data$WAIC$WAIC
-  data <- data$samples
   plot(data)
   cat("\n That is the effective sample size \n\n")
   print(effectiveSize(data))
   #Tine-series SE is monte carlo standard error var von dem ding durch samplsize
   cat("\n Summary of the values \n")
   print(summary(data))
-  cat("\n Summary of the WAIC \n")
-  print(WAIC)
   cat("\n Geweke diag and plot \n")
   print(geweke.diag(data))
   geweke.plot(data)

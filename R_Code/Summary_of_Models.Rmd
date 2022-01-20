@@ -6,7 +6,17 @@ source("lmm.r")
 ```
 
 ```{r }
-summarise_default(sofa_lmm)
+sofa_lmms <- subset_coda_params(data = sofa_lmm$samples, variable = c("sigma2", "beta0", "beta1", "beta2","sigma2_b0","tau"))
+sofa_lmm$WAIC$WAIC
+summarise_default(sofa_lmms)
+```
+
+### Explore predictions
+```{r }
+y_pred_lmm <- get_params(c("y_pred"),sofa_lmm$samples)
+plot(data$sofa, y_pred_lmm)
+exists <- !is.na(data$sofa)
+cor(data$sofa[exists], y_pred_lmm[exists])
 ```
 
 
@@ -19,9 +29,17 @@ source("Beta_Modell.r")
 ```
 
 ```{r }
-summarise_default(beta_rand)
+ai_beta <- subset_coda_params(data = beta_rand$samples, variable = c("beta0", "beta1", "beta2","sigma_b0","phi"))
+beta_rand$WAIC$WAIC
+summarise_default(ai_beta)
 ```
 
+### Explore predictions
+```{r }
+y_pred_beta <- get_params(c("y_pred"),beta_rand$samples)
+plot(data$ai, y_pred_beta)
+cor(data$ai, y_pred_beta)
+```
 ### some Plots
 
 ```{r}
