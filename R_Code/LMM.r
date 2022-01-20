@@ -41,5 +41,5 @@ normal_rand <- nimbleMCMC(
   samplesAsCodaMCMC = T, samples = T, # get an coda object instead of plain values
   WAIC = T ) # get the WAIC
 
-
+data$fail
 

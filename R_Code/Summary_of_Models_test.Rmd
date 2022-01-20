@@ -13,65 +13,89 @@ autocorr.diag(normal_rand$samples)
 ```
 
 
-
-
-#Old thing but for reference reasons still left over 
-```{r echo=F}
-source("Bayes1_lognormal_jags.R")
+#### LMM
+```{r }
+plot(beta_rand$samples)
+effectiveSize(beta_rand$samples) 
+#Tine-series SE is monte carlo standard error var von dem ding durch samplsize
+summary(beta_rand$samples)
+beta_rand$WAIC$WAIC
+geweke.diag(beta_rand$samples)
+geweke.plot(beta_rand$samples)
+gelman.diag(beta_rand$samples, confidence = 0.95)
+gelman.plot(beta_rand$samples, confidence = 0.95)
+autocorr.diag(beta_rand$samples)
 ```
-#### Results 
-Just the Plots of the Posterior curves of the Parameters and there summarys
+
+
 
 ```{r}
-attributes(lognorm_mcmc)
-summary.mcmc.list(lognorm_mcmc,)
-summary(lognorm)
+source("helpfunctions.r")
+#beta 1 age beta2 day
+beta_means <- get_params(c("beta0", "beta1","beta2","sigma_b0","phi"),beta_rand$samples)
+#age and day are transformed therefore also here some transofrmation
+age <- -0
+day <- c(-6,22)
 
-plot(lognorm)
-print(lognorm)
-cat("second kind of the plots seen before")
-plot(lognorm_mcmc)
+mu <- expit(beta_means["beta0"]+beta_means["beta1"]*age + beta_means["beta2"]*day)
+phi <- beta_means["phi"]
+a <- mu * phi
+b <- (1 - mu) * phi
+
+gr1_low <- qbeta(0.025, a , b)
+gr1_mid <- qbeta(0.5, a , b)
+gr1_up <- qbeta(0.975, a , b)
+
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.8,
+     ylab = "Overall survival probability")
+lines(day,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day,gr1_mid, col = 2, lwd = 3)
+lines(day,gr1_up, col = 2,lty = 2, lwd = 3)
+legend("topright", legend = c("SS", "HB"),lwd = 3,
+               lty = 1,col = c(2,3),
+               title = "Groups")
+
 
 ```
 
-
-#### Diagnostics
-##### Convergence checks
-First Gelman and Rubin and Geweke Plots are created, looks kind of ok in my eyes
+### with splines a plot
 ```{r}
-print("gelman diag")
-gelman.diag(lognorm_mcmc, confidence = 0.95)
-gelman.plot(lognorm_mcmc, confidence = 0.95)
-print("geweke diag")
-geweke.diag(lognorm_mcmc)
-geweke.plot(lognorm_mcmc)
+source("helpfunctions.r")
+#beta 1 age beta2 day
+beta_means <- get_params(c("beta0", "beta_age", "beta2","sigma_b0","phi"),beta_rand$samples)
+#age and day are transformed therefore also here some transofrmation
+age <- 22
+day <- c(-6:22)
+#works tryed it with the true data, if we would make a bigger project do a unit_test
+age <- bSpline(age,Boundary.knots =c(min(data$age),max(data$age)) , knots = c(-20,0,20),degree = 3)
+mu <- expit(beta_means["beta0"]+c(beta_means[grepl("beta_age", names(beta_means))]%*%t(age)) + beta_means["beta2"]*day)
 
-# dynamic geweke for single chain
-gw <- geweke.plot(lognorm_mcmc)
-m <- gw[["z"]][, , 1]
-df <- as.data.frame(m)
+phi <- beta_means["phi"]
+a <- mu * phi
+b <- (1 - mu) * phi
 
-names(df)<- c("beta0","beta1","beta2", "sigma")
-it_ini <- 3000
-it_fin <- 5500
-df['m'] = c(1:20)/20*(it_fin-it_ini)+it_ini
-df2 <- data.frame(m = df$m,                            
-                       Z = c(df$beta0, df$beta1, df$beta2, df$sigma),
-                       group = c(rep("beta0", nrow(df)),
-                                 rep("beta1", nrow(df)),
-                                 rep("beta2", nrow(df)),
-                                 rep("sigma", nrow(df))))
-g3<-ggplot(df2, aes(m, Z, col=group))
-g3 + geom_point() + geom_hline(aes(yintercept=2),color="black",linetype="dashed") +
-  geom_hline(aes(yintercept=-2),color="black",linetype="dashed")+
-  labs(title="Geweke diagnostic for chain 1",y="Z-score",x="First iteration in segment")
+gr1_low <- qbeta(0.025, a , b)
+gr1_mid <- qbeta(0.5, a , b)
+gr1_up <- qbeta(0.975, a , b)
+
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.8,
+     ylab = "Overall survival probability", col = data$id)
+lines(day,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day,gr1_mid, col = 2, lwd = 3)
+lines(day,gr1_up, col = 2,lty = 2, lwd = 3)
+legend("topright", legend = c("SS", "HB"),lwd = 3,
+               lty = 1,col = c(2,3),
+               title = "Groups")
+
+
 ```
 
-##### DIC
 
-```{r}
-extract.runjags(lognorm, "dic")
-```
+
+
+
 ##### CPO and PPo
 I always unluckly wrote PPO instead of CPO so it is the same in this document
  
