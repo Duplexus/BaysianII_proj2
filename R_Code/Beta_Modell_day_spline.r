@@ -2,7 +2,7 @@ library(nimble)
 library(coda)
 library(splines2)
 ## if directly run use this lines first to get the data setup
-data <- readRDS("data\\AIdataset_normalized.Rds")
+data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 data$id <- as.numeric(data$id)
 summary(data$ai)
 data$ai <- data$ai + 0.001
@@ -36,7 +36,7 @@ model.function <- nimbleCode({
     b[i] <-(1 - mu[i]) * phi
     #choice of a l logit link for this parameter
     #beta1 age beta2 day
-    logit(mu[i]) <- beta0+beta_age*X_age[i]+inprod(beta_day[], X_day[i,])+ b0[id[i]]
+    logit(mu[i]) <-beta0+beta_age*X_age[i]+inprod(beta_day[], X_day[i,])+ b0[id[i]]
   }
   #priors
   phi ~ dunif(0,10000)
@@ -46,12 +46,11 @@ model.function <- nimbleCode({
   for(j in 1:6){  
     beta_day[j] ~ dnorm(0, tau = 5)
   }
-  for ( i in 1:Nsubj){
-    b0[i] ~ dnorm(0,sd = sigma_b0)
+  for ( j in 1:Nsubj){
+      b0[j] ~ dnorm(0,sd = sigma_b0)
   }
 })
-
-
+    
 t_0 <- Sys.time()
 ai_spline_day <- nimbleMCMC(
   code = model.function, constants = model.constants,

@@ -2,7 +2,7 @@ library(nimble)
 library(coda)
 library(splines2)
 ## if directly run use this lines first to get the data setup
-data <- readRDS("data\\AIdataset_normalized.Rds")
+data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 data$id <- as.numeric(data$id)
 summary(data$ai)
 data$ai <- data$ai + 0.001

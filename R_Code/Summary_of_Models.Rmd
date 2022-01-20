@@ -1,31 +1,25 @@
-## LMM
+## LMM sofa
 ```{r }
-plot(normal_rand$samples)
-effectiveSize(normal_rand$samples) 
-#Tine-series SE is monte carlo standard error var von dem ding durch samplsize
-summary(normal_rand$samples)
-normal_rand$WAIC$WAIC
-geweke.diag(normal_rand$samples)
-geweke.plot(normal_rand$samples)
-gelman.diag(normal_rand$samples, confidence = 0.95)
-gelman.plot(normal_rand$samples, confidence = 0.95)
-autocorr.diag(normal_rand$samples)
+source("helpfunctions.r")
+source("lmm.r")
+#result is sofa_lmm
+```
+
+```{r }
+summarise_default(sofa_lmm)
 ```
 
 
 ## Beta_Model
 ### some Summary
 ```{r }
-plot(beta_rand$samples)
-effectiveSize(beta_rand$samples) 
-#Tine-series SE is monte carlo standard error var von dem ding durch samplsize
-summary(beta_rand$samples)
-beta_rand$WAIC$WAIC
-geweke.diag(beta_rand$samples)
-geweke.plot(beta_rand$samples)
-gelman.diag(beta_rand$samples, confidence = 0.95)
-gelman.plot(beta_rand$samples, confidence = 0.95)
-autocorr.diag(beta_rand$samples)
+source("helpfunctions.r")
+source("Beta_Modell.r")
+#result ist beta_rand
+```
+
+```{r }
+summarise_default(beta_rand)
 ```
 
 ### some Plots
@@ -63,8 +57,19 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
 ## Beta_ with splines age
 ```{r}
 source("helpfunctions.r")
+source("Beta_Modell_age_spline.r")
+#result is ai_spline_age
+```
+### Summary
+```{r}
+summarise_default(ai_spline_age)
+```
+
+### Plotting
+```{r}
+
 #beta 1 age beta2 day
-beta_means <- get_params(c("beta0", "beta_age", "beta2","sigma_b0","phi"),beta_rand$samples)
+beta_means <- get_params(c("beta0", "beta_age", "beta2","sigma_b0","phi"),ai_spline_age$samples)
 #age and day are transformed therefore also here some transofrmation
 age <- 22
 day <- c(-6:22)
@@ -94,23 +99,18 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
 
 ```
 ## splines a for day and age ai_spline_age_day
-### Summary for day and age
+```{r}
+source("helpfunctions.r")
+source("Beta_Modell_age_day_spline.r")
+#result is ai_spline_age_day
+```
+###Summary
 ```{r }
-plot(ai_spline_age_day$samples)
-effectiveSize(ai_spline_age_day$samples) 
-#Tine-series SE is monte carlo standard error var von dem ding durch samplsize
-summary(ai_spline_age_day$samples)
-ai_spline_age_day$WAIC$WAIC
-geweke.diag(ai_spline_age_day$samples)
-geweke.plot(ai_spline_age_day$samples)
-gelman.diag(ai_spline_age_day$samples, confidence = 0.95)
-gelman.plot(ai_spline_age_day$samples, confidence = 0.95)
-autocorr.diag(ai_spline_age_day$samples)
-
+summarise_default(ai_spline_age_day)
 ```
 
 
-### with splines a for day and age a plot
+###Plotting
 ```{r}
 source("helpfunctions.r")
 #beta 1 age beta2 day
@@ -141,23 +141,17 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
                lty = 1,col = c(2,3),
                title = "Groups")
 ```
-## splines a for day and age ai_spline_day
-### Summary for day and age
-```{r }
-plot(ai_spline_age_day$samples)
-effectiveSize(ai_spline_age_day$samples) 
-#Tine-series SE is monte carlo standard error var von dem ding durch samplsize
-summary(ai_spline_age_day$samples)
-ai_spline_age_day$WAIC$WAIC
-geweke.diag(ai_spline_age_day$samples)
-geweke.plot(ai_spline_age_day$samples)
-gelman.diag(ai_spline_age_day$samples, confidence = 0.95)
-gelman.plot(ai_spline_age_day$samples, confidence = 0.95)
-autocorr.diag(ai_spline_age_day$samples)
-
+## splines a for day ai_spline_day
+```{r}
+source("helpfunctions.r")
+source("Beta_Modell_day_spline.r")
+#result is ai_spline_age_day
 ```
 
-
+### Summary 
+```{r }
+summarise_default(ai_spline_age_day)
+```
 ### with splines a for day a plot
 ```{r}
 source("helpfunctions.r")
@@ -188,6 +182,12 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
                lty = 1,col = c(2,3),
                title = "Groups")
 ```
+
+
+
+
+
+
 
 
 

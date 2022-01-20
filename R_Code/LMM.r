@@ -1,7 +1,7 @@
 library(nimble)
 library(coda)
 ## if directly run use this lines first to get the data setup
-data <- readRDS("data\\AIdataset_normalized.Rds")
+data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 data$id <- as.numeric(data$id)
 #we want to regress: (sofa ~ age + day +(1|id), data) in a bayesian way
 
@@ -33,7 +33,7 @@ model.function <- nimbleCode({
   }
 })
 
-normal_rand <- nimbleMCMC(
+sofa_lmm <- nimbleMCMC(
   code = model.function, constants = model.constants,
   data = model.data, inits = model.inits,
   monitors = parameters, nchains = 3, niter = 5000,

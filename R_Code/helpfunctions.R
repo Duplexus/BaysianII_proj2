@@ -40,3 +40,48 @@ get_params <- function(params, data, functions_ = mean){
   }
   return(unlist(a))
 }
+
+"
+variable    which variable is planned to be subsettet (which of the collumns)
+data        mcmc dataset (coda)
+"
+subset_coda_params <- function(variable, data){
+  sub_logical <- rep(F, times = length(dimnames(data[[1]])[[2]]))
+  for (i in 1:length(variable)){
+  subset_pred <- grepl(variable[i], dimnames(data[[1]])[[2]])
+  sub_logical <- sub_logical | subset_pred
+  }
+  for (j in 1:length(data)){
+    data[[j]]<- data[[j]][,sub_logical]
+  }
+
+  return(data)
+}
+"
+data  output of coda
+!!ATTENTION it is assumed WAIC is calculated, else you need to modify
+"
+
+summarise_default <- function(data){
+  WAIC <- data$WAIC$WAIC
+  data <- data$samples
+  plot(data)
+  cat("\n That is the effective sample size \n\n")
+  print(effectiveSize(data))
+  #Tine-series SE is monte carlo standard error var von dem ding durch samplsize
+  cat("\n Summary of the values \n")
+  print(summary(data))
+  cat("\n Summary of the WAIC \n")
+  print(WAIC)
+  cat("\n Geweke diag and plot \n")
+  print(geweke.diag(data))
+  geweke.plot(data)
+  cat("\n Gelman diag and plot \n")
+  print(gelman.diag(data, confidence = 0.95))
+  gelman.plot(data, confidence = 0.95)
+  cat("\n Autocorrelation of the variables \n")
+  autocorr.diag(data)
+}
+
+
+

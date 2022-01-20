@@ -1,7 +1,7 @@
 library(nimble)
 library(coda)
 ## if directly run use this lines first to get the data setup
-data <- readRDS("data\\AIdataset_normalized.Rds")
+data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 data$id <- as.numeric(data$id)
 summary(data$ai)
 data$ai <- data$ai + 0.001
@@ -17,7 +17,7 @@ model.inits <- list(
   list(beta0 = 0.5, beta1 = -0.1, beta2 = -0.1, phi = 10, sigma_b0 = 1.5),
   list(beta0 = 1, beta1 = 0.1, beta2 = 0.1, phi = 20, sigma_b0 = 0.5)
 )
-parameters = c("beta0", "beta1", "beta2","sigma_b0","phi")
+parameters = c("beta0", "beta1", "beta2","sigma_b0","phi","y_pred")
 
 model.constants <- list( N = length(data$sofa), x1 = data$age,
                          id = data$id, x2 = data$day,  Nsubj = length(unique(data$id)))
@@ -26,6 +26,7 @@ model.data <- list(y = data$ai)
 model.function <- nimbleCode({
   for (i in 1:N){
     y[i] ~ dbeta(a[i], b[i])
+    y_pred[i] ~ dbeta(a[i], b[i])
     a[i] <- mu[i] * phi
     b[i] <-(1 - mu[i]) * phi
     #choice of a l logit link for this parameter

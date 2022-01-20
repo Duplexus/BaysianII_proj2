@@ -2,7 +2,7 @@ library(nimble)
 library(coda)
 library(splines2)
 ## if directly run use this lines first to get the data setup
-data <- readRDS("data\\AIdataset_normalized.Rds")
+data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 data$id <- as.numeric(data$id)
 summary(data$ai)
 data$ai <- data$ai + 0.001
@@ -53,7 +53,7 @@ model.function <- nimbleCode({
 
 
 t_0 <- Sys.time()
-beta_rand <- nimbleMCMC(
+ai_spline_age <- nimbleMCMC(
   code = model.function, constants = model.constants,
   data = model.data, inits = model.inits,
   monitors = parameters, nchains = 3, niter = 5000,
