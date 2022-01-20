@@ -63,12 +63,13 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
 ```{r}
 source("helpfunctions.r")
 #beta 1 age beta2 day
-beta_means <- get_params(c("beta0", "beta_age", "beta2","sigma_b0","phi"),beta_rand$samples)
+beta_means <- get_params(c("beta0", "beta_age", "beta2","sigma_b0","phi"),ai_spline_age_day$samples)
 #age and day are transformed therefore also here some transofrmation
 age <- 22
 day <- c(-6:22)
 #works tryed it with the true data, if we would make a bigger project do a unit_test
 age <- bSpline(age,Boundary.knots =c(min(data$age),max(data$age)) , knots = c(-20,0,20),degree = 3)
+age <- bSpline(day,Boundary.knots =c(min(data$day),max(data$day)) , knots = c(-4,-2,3),degree = 3)
 mu <- expit(beta_means["beta0"]+c(beta_means[grepl("beta_age", names(beta_means))]%*%t(age)) + beta_means["beta2"]*day)
 
 phi <- beta_means["phi"]
@@ -89,12 +90,44 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
                lty = 1,col = c(2,3),
                title = "Groups")
 
-
 ```
 
 
 
 
+### with splines a for day and age
+```{r}
+source("helpfunctions.r")
+#beta 1 age beta2 day
+beta_means <- get_params(c("beta0", "beta_age", "beta_day","sigma_b0","phi"),beta_rand$samples)
+#age and day are transformed therefore also here some transofrmation
+age_orig <- 22
+day_orig <- c(-6:22)
+#works tryed it with the true data, if we would make a bigger project do a unit_test
+age <- bSpline(age_orig,Boundary.knots =c(min(data$age),max(data$age)) , knots = c(-20,0,20),degree = 3)
+day <- bSpline(day_orig,Boundary.knots =c(min(data$day),max(data$day)) , knots = c(-4,-2,3),degree = 3)
+mu <- expit(beta_means["beta0"]+c(beta_means[grepl("beta_age", names(beta_means))]%*%t(age)) + c(beta_means[grepl("beta_day", names(beta_means))]%*%t(day)))
+
+phi <- beta_means["phi"]
+a <- mu * phi
+b <- (1 - mu) * phi
+
+gr1_low <- qbeta(0.025, a , b)
+gr1_mid <- qbeta(0.5, a , b)
+gr1_up <- qbeta(0.975, a , b)
+
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.8,
+     ylab = "Overall survival probability", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+legend("topright", legend = c("SS", "HB"),lwd = 3,
+               lty = 1,col = c(2,3),
+               title = "Groups")
+
+
+```
 
 ##### CPO and PPo
 I always unluckly wrote PPO instead of CPO so it is the same in this document
