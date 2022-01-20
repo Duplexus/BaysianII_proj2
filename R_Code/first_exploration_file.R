@@ -83,6 +83,10 @@ xyplot(data$ai ~ data$day|as.factor(data$id), cex=0.5,
        par.settings=list(superpose.symbol = list(pch=c(1,3,20))),
        as.table=T, auto.key=list(points=T,columns=3), xlab="day", ylab="SOFA")
 
+xyplot(data$ai ~ data$age|as.factor(data$day), cex=0.5,
+       par.settings=list(superpose.symbol = list(pch=c(1,3,20))),
+       as.table=T, auto.key=list(points=T,columns=3), xlab="day", ylab="AI")
+
 
 
 

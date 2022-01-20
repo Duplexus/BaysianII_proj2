@@ -1,4 +1,4 @@
-#### LMM
+## LMM
 ```{r }
 plot(normal_rand$samples)
 effectiveSize(normal_rand$samples) 
@@ -13,7 +13,8 @@ autocorr.diag(normal_rand$samples)
 ```
 
 
-#### LMM
+## Beta_Model
+### some Summary
 ```{r }
 plot(beta_rand$samples)
 effectiveSize(beta_rand$samples) 
@@ -27,7 +28,7 @@ gelman.plot(beta_rand$samples, confidence = 0.95)
 autocorr.diag(beta_rand$samples)
 ```
 
-
+### some Plots
 
 ```{r}
 source("helpfunctions.r")
@@ -59,11 +60,11 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
 
 ```
 
-### with splines a plot
+## Beta_ with splines age
 ```{r}
 source("helpfunctions.r")
 #beta 1 age beta2 day
-beta_means <- get_params(c("beta0", "beta_age", "beta2","sigma_b0","phi"),ai_spline_age_day$samples)
+beta_means <- get_params(c("beta0", "beta_age", "beta2","sigma_b0","phi"),beta_rand$samples)
 #age and day are transformed therefore also here some transofrmation
 age <- 22
 day <- c(-6:22)
@@ -90,32 +91,93 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
                lty = 1,col = c(2,3),
                title = "Groups")
 
+
+```
+## splines a for day and age ai_spline_age_day
+### Summary for day and age
+```{r }
+plot(ai_spline_age_day$samples)
+effectiveSize(ai_spline_age_day$samples) 
+#Tine-series SE is monte carlo standard error var von dem ding durch samplsize
+summary(ai_spline_age_day$samples)
+ai_spline_age_day$WAIC$WAIC
+geweke.diag(ai_spline_age_day$samples)
+geweke.plot(ai_spline_age_day$samples)
+gelman.diag(ai_spline_age_day$samples, confidence = 0.95)
+gelman.plot(ai_spline_age_day$samples, confidence = 0.95)
+autocorr.diag(ai_spline_age_day$samples)
+
 ```
 
 
-
-
-### with splines a for day and age
+### with splines a for day and age a plot
 ```{r}
 source("helpfunctions.r")
 #beta 1 age beta2 day
-beta_means <- get_params(c("beta0", "beta_age", "beta_day","sigma_b0","phi"),beta_rand$samples)
+beta_means <- get_params(c("beta0", "beta_age", "beta_day","sigma_b0","phi"),ai_spline_age_day$samples)
 #age and day are transformed therefore also here some transofrmation
 age_orig <- 22
 day_orig <- c(-6:22)
 #works tryed it with the true data, if we would make a bigger project do a unit_test
 age <- bSpline(age_orig,Boundary.knots =c(min(data$age),max(data$age)) , knots = c(-20,0,20),degree = 3)
 day <- bSpline(day_orig,Boundary.knots =c(min(data$day),max(data$day)) , knots = c(-4,-2,3),degree = 3)
-mu <- expit(beta_means["beta0"]+c(beta_means[grepl("beta_age", names(beta_means))]%*%t(age)) + c(beta_means[grepl("beta_day", names(beta_means))]%*%t(day)))
 
+mu <- expit(beta_means["beta0"]+c(beta_means[grepl("beta_age", names(beta_means))]%*%t(age)) + c(beta_means[grepl("beta_day", names(beta_means))]%*%t(day)))
 phi <- beta_means["phi"]
 a <- mu * phi
 b <- (1 - mu) * phi
 
+
 gr1_low <- qbeta(0.025, a , b)
 gr1_mid <- qbeta(0.5, a , b)
 gr1_up <- qbeta(0.975, a , b)
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.8,
+     ylab = "Overall survival probability", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day,gr1_up, col = 2,lty = 2, lwd = 3)
+legend("topright", legend = c("SS", "HB"),lwd = 3,
+               lty = 1,col = c(2,3),
+               title = "Groups")
+```
+## splines a for day and age ai_spline_day
+### Summary for day and age
+```{r }
+plot(ai_spline_age_day$samples)
+effectiveSize(ai_spline_age_day$samples) 
+#Tine-series SE is monte carlo standard error var von dem ding durch samplsize
+summary(ai_spline_age_day$samples)
+ai_spline_age_day$WAIC$WAIC
+geweke.diag(ai_spline_age_day$samples)
+geweke.plot(ai_spline_age_day$samples)
+gelman.diag(ai_spline_age_day$samples, confidence = 0.95)
+gelman.plot(ai_spline_age_day$samples, confidence = 0.95)
+autocorr.diag(ai_spline_age_day$samples)
 
+```
+
+
+### with splines a for day a plot
+```{r}
+source("helpfunctions.r")
+#beta 1 age beta2 day
+beta_means <- get_params(c("beta0", "beta_age", "beta_day","sigma_b0","phi"),ai_spline_day$samples)
+#age and day are transformed therefore also here some transofrmation
+age_orig <- 22
+day_orig <- c(-6:22)
+#works tryed it with the true data, if we would make a bigger project do a unit_test
+day <- bSpline(day_orig,Boundary.knots =c(min(data$day),max(data$day)) , knots = c(-4,-2,3),degree = 3)
+
+mu <- expit(beta_means["beta0"]+beta_means["beta_age"]*age_orig + c(beta_means[grepl("beta_day", names(beta_means))]%*%t(day)))
+phi <- beta_means["phi"]
+a <- mu * phi
+b <- (1 - mu) * phi
+
+
+gr1_low <- qbeta(0.025, a , b)
+gr1_mid <- qbeta(0.5, a , b)
+gr1_up <- qbeta(0.975, a , b)
 plot(data$day, data$ai,  pch = 19, lwd = 1.5,
       xlab = "Days", cex.lab = 1.8,
      ylab = "Overall survival probability", col = data$id)
@@ -125,9 +187,32 @@ lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
 legend("topright", legend = c("SS", "HB"),lwd = 3,
                lty = 1,col = c(2,3),
                title = "Groups")
-
-
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ##### CPO and PPo
 I always unluckly wrote PPO instead of CPO so it is the same in this document
