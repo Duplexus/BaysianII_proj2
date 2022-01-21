@@ -17,6 +17,8 @@ y_pred_lmm <- get_params(c("y_pred"),sofa_lmm$samples)
 plot(data$sofa, y_pred_lmm)
 exists <- !is.na(data$sofa)
 cor(data$sofa[exists], y_pred_lmm[exists])
+
+data$sofa_pred <- y_pred_lmm
 ```
 
 
@@ -39,6 +41,11 @@ summarise_default(ai_beta)
 y_pred_beta <- get_params(c("y_pred"),beta_rand$samples)
 plot(data$ai, y_pred_beta)
 cor(data$ai, y_pred_beta)
+
+data$ai_pred <- y_pred_beta
+saveRDS(data, file = "..\\data\\Prep_data_for_ex3.rds")
+
+data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 ```
 ### some Plots
 

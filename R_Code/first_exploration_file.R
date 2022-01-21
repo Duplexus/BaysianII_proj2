@@ -15,6 +15,11 @@ day_real <- data$day
 data$age <- data$age - mean(data$age)
 data$day <- data$day - mean(data$day)
 saveRDS(data, file = "data\\AIdataset_normalized.Rds")
+data <- readRDS("data\\AIdataset_normalized.Rds")
+#prepare for excercise 3
+data$fail <- ifelse(data$fail2 == 2, 0, data$fail)
+
+
 #### some Plots ####
 library(ggplot2)
 ggplot(data,aes(x=day_real,y=sofa)) + stat_binhex(na.rm = T) + scale_fill_gradient(low = "blue", high = "green")

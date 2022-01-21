@@ -1,5 +1,9 @@
 library(nimble)
 library(coda)
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+
+
 ## if directly run use this lines first to get the data setup
 data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 data$id <- as.numeric(data$id)
