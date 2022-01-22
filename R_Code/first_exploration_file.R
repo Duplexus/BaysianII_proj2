@@ -1,20 +1,5 @@
 getwd()
-data <- readRDS("data\\AIdataset.Rds")
-#MV   Mechanical Ventilation
-#ICU  intensive care unit
-#PVA  Patient-ventilator asynchronies
-#SOFA measures the degree of organ dysfunction and assesses 
-      #the evolution of the patient’s severity over the ICU stay
-#AI  measures PVAs and assesses overall severity
-#### Data Changes ####
-#ai is somehow called di
-####Initial Changes####
-colnames(data)[6] <- "ai"
-age_real <- data$age
-day_real <- data$day
-data$age <- data$age - mean(data$age)
-data$day <- data$day - mean(data$day)
-saveRDS(data, file = "data\\AIdataset_normalized.Rds")
+
 data <- readRDS("data\\AIdataset_normalized.Rds")
 #prepare for excercise 3
 data$fail <- ifelse(data$fail2 == 2, 0, data$fail)
