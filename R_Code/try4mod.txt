@@ -1,0 +1,38 @@
+model{
+  for(i in 1:n){
+    #longit
+    for(j in 1:M[i]){
+      di.data[i,j] ~ dnorm(mu[i,j],tau)
+      mu[i,j] <- inprod(betaL[],XL[i,j,])+inprod(b[i,],ZL[i,j,])
+    }
+    #surv and cens
+    for(j in 1:K){
+      haz[i,j] <- alpha*pow(Time[i]/2*(xk[j]+1),alpha-1) *
+        exp(inprod(betaS[],XS[i,])+gamma*(b[i,1]+b[i,2]*(Time[i]/2*(xk[j]+1))))
+    }
+    #logsurv w gauss-legendre quad
+    logSurv[i] <- -Time[i]/2 * inprod(wk,haz[i,])
+    
+    #surv loglikehliodo
+    phi[i] <- 100000 - death[i]*log(haz[i,K]) - logSurv[i]
+    zeros[i]~dpois(phi[i])
+    
+    #random effects
+    b[i,1:Nb] ~ dmnorm(mub[],Omega[,])
+  }
+  #priors
+  for(l in 1:NbetasS){
+    betaS[l]~dnorm(0,0.0001)
+    }
+    gamma~dnorm(0,0.0001)
+    alpha~dunif(0,100)
+  for(l in 1:NbetasL){
+    betaL[l]~dnorm(0,0.0001)
+  }
+    tau <- pow(sigma,-2)
+    sigma~dunif(0,100)
+    Omega[1:Nb,1:Nb]~dwish(V[,],Nb)
+    Sigma[1:Nb,1:Nb]<- inverse(Omega[,])
+    
+    lambda <- exp(betaS[1])
+}
