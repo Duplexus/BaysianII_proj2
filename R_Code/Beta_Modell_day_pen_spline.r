@@ -1,6 +1,8 @@
 library(nimble)
 library(coda)
 library(splines2)
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
 ## if directly run use this lines first to get the data setup
 #setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 #try(setwd(".\\data"))
@@ -9,7 +11,7 @@ data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 data$id <- as.numeric(data$id)
 summary(data$ai)
 summary(data$day)
-data$ai <- data$ai + 0.001
+data$ai <- data$ai + 1e-6
 
 #we want to regress: (sofa ~ age + day +(1|id), data) in a bayesian way
 summary(data$age)
@@ -23,7 +25,7 @@ model.inits <- list(
   list(lambda = 2,beta0 = 0.5, beta_age=1,beta_day=rep(1, 20),phi = 10, sigma_b0 = 1.5,b0 = rep(0,groups_id)),
   list(lambda = 2,beta0 = 1.0, beta_age=1,beta_day=rep(1, 20),phi = 20, sigma_b0 = 0.5,b0 = rep(0,groups_id))
 )
-parameters = c("beta0", "beta_age", "beta_day","sigma_b0","phi","lambda")
+parameters = c("beta0", "beta_age", "beta_day","sigma_b0","phi","lambda","ppo","Deviance")
 library(splines2)
 
 #instead of the normal x include b-splines
@@ -48,7 +50,10 @@ model.function <- nimbleCode({
     #choice of a l logit link for this parameter
     #beta1 age beta2 day
     logit(mu[i]) <-beta0+beta_age*X_age[i]+inprod(beta_day[], X_day[i,])+ b0[id[i]]
+    ppo[i] <- dbeta(y[i],a[i], b[i])
+    D[i] <- -2*log(ppo[i])
   }
+  Deviance <- sum(D[1:N])
   #priors
   phi ~ dunif(0,10000)
   sigma_b0 ~ dgamma(0.001, 0.001)
@@ -66,12 +71,12 @@ t_0 <- Sys.time()
 ai_pbspline_day <- nimbleMCMC(
   code = model.function, constants = model.constants,
   data = model.data, inits = model.inits,
-  monitors = parameters, nchains = 3, niter = 10000,
-  nburnin = 5000, thin = 10, setSeed = c(1,2,3),
+  monitors = parameters, nchains = 3, niter = 20000,
+  nburnin = 10000, thin = 10, setSeed = c(1,2,3),
   samplesAsCodaMCMC = T, samples = T, # get an coda object instead of plain values
   WAIC = T ) # get the WAIC
 t_1 <- Sys.time()
 time_linear <- t_1 - t_0
 time_linear
-saveRDS(ai_pbspline_day, file = "..\\data\\mcmc_res\\day_pen_spline.Rds")
+saveRDS(ai_pbspline_day, file = "..\\data\\mcmc_res\\lowe_ai_day_pen_spline.Rds")
 

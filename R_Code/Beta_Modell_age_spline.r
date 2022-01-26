@@ -18,7 +18,7 @@ model.inits <- list(
   list(beta0 = 0.5, beta_age=rep(1, 6), beta2 = -0.1, phi = 10, sigma_b0 = 1.5),
   list(beta0 = 1,   beta_age=rep(1, 6), beta2 = 0.1,  phi = 20, sigma_b0 = 0.5)
 )
-parameters = c("beta0", "beta_age", "beta2","sigma_b0","phi")
+parameters = c("beta0", "beta_age", "beta2","sigma_b0","phi","b0","Deviance","ppo")
 model.constants <- list( N = length(data$sofa), x1 = data$age,
                          id = data$id,          x2 = data$day,  
                          Nsubj = length(unique(data$id)))
@@ -37,7 +37,10 @@ model.function <- nimbleCode({
     #beta1 age beta2 day
     logit(mu[i]) <- beta0 + inprod(beta_age[], X_age[i,]) +
       beta2 *x2[i]+ b0[id[i]]
+    ppo[i] <- dbeta(y[i],a[i], b[i])
+    D[i] <- -2*log(ppo[i])
   }
+  Deviance <- sum(D[1:N])
   #priors
   phi ~ dunif(0,10000)
   sigma_b0 ~ dgamma(0.001, 0.001)
@@ -56,8 +59,8 @@ t_0 <- Sys.time()
 ai_spline_age <- nimbleMCMC(
   code = model.function, constants = model.constants,
   data = model.data, inits = model.inits,
-  monitors = parameters, nchains = 3, niter = 5000,
-  nburnin = 2000, thin = 10, setSeed = c(1,2,3),
+  monitors = parameters, nchains = 3, niter = 25000,
+  nburnin = 15000, thin = 10, setSeed = c(1,2,3),
   samplesAsCodaMCMC = T, samples = T, # get an coda object instead of plain values
   WAIC = T ) # get the WAIC
 t_1 <- Sys.time()

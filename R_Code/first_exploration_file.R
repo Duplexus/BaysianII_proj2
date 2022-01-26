@@ -1,10 +1,10 @@
 getwd()
 
 
-data <- readRDS("data\\AIdataset.Rds")
+data <- readRDS("..\\data\\AIdataset.Rds")
 age_real <- data$age
 day_real <- data$day
-data <- readRDS("data\\AIdataset_normalized.Rds")
+data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 #prepare for excercise 3
 data$fail <- ifelse(data$fail == 2, 0, data$fail)
 
