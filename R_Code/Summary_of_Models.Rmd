@@ -1,11 +1,48 @@
-## LMM sofa
+## Source All Files if still needed:
 ```{r }
-source("helpfunctions.r")
-source("lmm.r")
-library(nimble)
-#result is sofa_lmm
+library("nimble")
+library("coda")
 ```
 
+```{r }
+source("..\\R_Code\\helpfunctions.r")
+source("..\\R_Code\\lmm.r")
+source("..\\R_Code\\Beta_Modell.r")
+source("..\\R_Code\\Beta_Modell_age_spline.r")
+source("..\\R_Code\\Beta_Modell_day_spline.r")
+source("..\\R_Code\\Beta_Modell_age_day_spline.r")
+source("..\\R_Code\\Beta_Modell_day_pen_spline.r")
+```
+
+## LMM sofa
+```{r }
+source("..\\R_Code\\helpfunctions.r")
+#source("..\\R_Code\\lmm.r")
+library(nimble)
+#result is sofa_lmm
+sofa_lmm <- readRDS("..\\data\\mcmc_res\\sofa_lmm.Rds")
+
+```
+
+```{r }
+
+summarise_default <- function(data){
+  plot(data)
+  cat("\n That is the effective sample size \n\n")
+  print(effectiveSize(data))
+  #Tine-series SE is monte carlo standard error var von dem ding durch samplsize
+  cat("\n Summary of the values \n")
+  print(summary(data))
+  cat("\n Geweke diag and plot \n")
+  print(geweke.diag(data))
+  geweke.plot(data)
+  cat("\n Gelman diag and plot \n")
+  print(gelman.diag(data, confidence = 0.95))
+  gelman.plot(data, confidence = 0.95)
+  cat("\n Autocorrelation of the variables \n")
+  autocorr.diag(data)
+}
+```
 ```{r }
 sofa_lmms <- subset_coda_params(data = sofa_lmm$samples, variable = c("sigma2", "beta0", "beta1", "beta2","sigma2_b0","tau"))
 sofa_lmm$WAIC$WAIC
@@ -23,12 +60,13 @@ data$sofa_pred <- y_pred_lmm
 ```
 
 
-## Beta_Model
+## Beta
 ### some Summary
 ```{r }
 source("helpfunctions.r")
-source("Beta_Modell.r")
+#source("Beta_Modell.r")
 #result ist beta_rand
+ai_pbspline_day <- readRDS("..\\data\\mcmc_res\\beta_rand.rds")
 ```
 
 ```{r }
@@ -81,15 +119,20 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
 
 ```
 
-## Beta_ with splines age
+## Beta Age Spline
 ```{r}
 source("helpfunctions.r")
-source("Beta_Modell_age_spline.r")
-#result is ai_spline_age
+#source("Beta_Modell_age_spline.r")
+ai_spline_age <- readRDS("..\\data\\mcmc_res\\ai_spline_age.Rds")
+##result is ai_spline_age
 ```
 ### Summary
 ```{r}
-summarise_default(ai_spline_age)
+summarise_default(ai_spline_age$samples)
+```
+
+```{r}
+ai_spline_age$WAIC$WAIC
 ```
 
 ### Plotting
@@ -102,7 +145,6 @@ age <- 22
 day <- c(-6:22)
 #works tryed it with the true data, if we would make a bigger project do a unit_test
 age <- bSpline(age,Boundary.knots =c(min(data$age),max(data$age)) , knots = c(-20,0,20),degree = 3)
-age <- bSpline(day,Boundary.knots =c(min(data$day),max(data$day)) , knots = c(-4,-2,3),degree = 3)
 mu <- expit(beta_means["beta0"]+c(beta_means[grepl("beta_age", names(beta_means))]%*%t(age)) + beta_means["beta2"]*day)
 
 phi <- beta_means["phi"]
@@ -125,15 +167,19 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
 
 
 ```
-## splines a for day and age ai_spline_age_day
+## Beta Day Age Spline ai_spline_age_day
 ```{r}
-source("helpfunctions.r")
-source("Beta_Modell_age_day_spline.r")
+#source("Beta_Modell_age_day_spline.r")
+ai_spline_age_day <- readRDS("..\\data\\mcmc_res\\ai_spline_age_day.Rds")
 #result is ai_spline_age_day
 ```
 ###Summary
 ```{r }
-summarise_default(ai_spline_age_day)
+
+summarise_default(ai_spline_age_day$samples)
+```
+```{r }
+ai_spline_age_day$WAIC$WAIC
 ```
 
 
@@ -168,27 +214,110 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
                lty = 1,col = c(2,3),
                title = "Groups")
 ```
-## splines a for day ai_spline_day
+## Beta Day Spline
 ```{r}
 source("helpfunctions.r")
-source("Beta_Modell_day_spline.r")
+#source("Beta_Modell_day_spline.r")
+
+ai_spline_age_day <- readRDS("..\\data\\mcmc_res\\ai_spline_day.Rds")
+
 #result is ai_spline_age_day
 ```
 
 ### Summary 
 ```{r }
-summarise_default(ai_spline_age_day)
+summarise_default(ai_spline_age_day$samples)
+```
+### Plot
+```{r}
+source("helpfunctions.r")
+#beta 1 age beta2 day
+#beta_means <- get_params(c("beta0", "beta_age", "beta_day","sigma_b0","phi"),ai_spline_day$samples)
+
+#just the same as subsetting basically
+beta_means <- get_params(c("beta0", "beta_age", "beta_day","sigma_b0","phi"),ai_spline_day$samples,functions_ = function(x)x)
+#calculate prediction for every set of variables, for chosen x values
+#really hand crafted
+colnames(beta_means)
+
+age_orig <- 55
+day_orig <- c(-10:18)
+#var coming from random intercept
+get_params(c("sigma_b0"),ai_spline_day$samples)
+random <- 0.42
+#works tryed it with the true data, if we would make a bigger project do a unit_test
+day <- bSpline(-10:18,Boundary.knots =c(min(data$day),max(data$day)) , knots = c(-4,-2,3),degree = 3)
+
+beta_day_spline <- function(x){
+  mu <- expit(2*random + x["beta0"]+x["beta_age"]*age_orig + c(x[grepl("beta_day", names(x))]%*%t(day)))
+  vergleich <<- (2*random + x["beta0"]+x["beta_age"]*age_orig + c(x[grepl("beta_day", names(x))]%*%t(day)))
+  phi <- x["phi"]
+  a <- mu * phi
+  b <- (1 - mu) * phi
+  return(qbeta(0.5, a , b))
+}
+est_values <- (apply(beta_means,1,beta_day_spline))
+#now we have all estimates for all sets off data, now calculate there the quantiles
+#the objedct has dim (length(day),length(mcmc_sample))
+get_estimates <- apply(est_values,1,quantile,c(0.025,0.5,0.975))
+
+gr1_low <- get_estimates[1,]
+gr1_mid <- get_estimates[2,]
+gr1_up  <- get_estimates[3,]
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.8,
+     ylab = "Overall survival probability", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+legend("topright", legend = c("SS", "HB"),lwd = 3,
+               lty = 1,col = c(2,3),
+               title = "Groups")
+# 
+# #other method where i just use the quantiles of the total mean of the parameters instead of the quantiles of the estimated values is probably worse
+# mu <- expit(beta_means["beta0"]+beta_means["beta_age"]*age_orig + c(beta_means[grepl("beta_day", names(beta_means))]%*%t(day)))
+# phi <- beta_means["phi"]
+# a <- mu * phi
+# b <- (1 - mu) * phi
+# 
+# gr1_low <- qbeta(0.025, a , b)
+# gr1_mid <- qbeta(0.5, a , b)
+# gr1_up <- qbeta(0.975, a , b)
+# plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+#       xlab = "Days", cex.lab = 1.8,
+#      ylab = "Overall survival probability", col = data$id)
+# lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+# lines(day_orig,gr1_mid, col = 2, lwd = 3)
+# lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+# legend("topright", legend = c("SS", "HB"),lwd = 3,
+#                lty = 1,col = c(2,3),
+#                title = "Groups")
+```
+
+
+
+## Beta P-Bsplines Day
+```{r}
+#source("..\\R_code\\Beta_Modell_day_pen_spline.r")
+ai_pspline_day <-readRDS("..\\data\\mcmc_res\\day_pen_spline.Rds")
+#result is ai_spline_age_day
+```
+
+### Summary 
+```{r }
+summarise_default(ai_pspline_day$samples)
+ai_pspline_day$WAIC$WAIC
 ```
 ### with splines a for day a plot
 ```{r}
 source("helpfunctions.r")
 #beta 1 age beta2 day
-beta_means <- get_params(c("beta0", "beta_age", "beta_day","sigma_b0","phi"),ai_spline_day$samples)
+beta_means <- get_params(c("beta0", "beta_age", "beta_day","sigma_b0","phi"),ai_pspline_day$samples)
 #age and day are transformed therefore also here some transofrmation
-age_orig <- 22
-day_orig <- c(-6:22)
 #works tryed it with the true data, if we would make a bigger project do a unit_test
-day <- bSpline(day_orig,Boundary.knots =c(min(data$day),max(data$day)) , knots = c(-4,-2,3),degree = 3)
+day <- bSpline(day_orig,degree = 3,df = 20)
+age_orig <- 22
+day_orig <- seq(-15,22,length= ncol(day))
 
 mu <- expit(beta_means["beta0"]+beta_means["beta_age"]*age_orig + c(beta_means[grepl("beta_day", names(beta_means))]%*%t(day)))
 phi <- beta_means["phi"]
@@ -209,34 +338,6 @@ legend("topright", legend = c("SS", "HB"),lwd = 3,
                lty = 1,col = c(2,3),
                title = "Groups")
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

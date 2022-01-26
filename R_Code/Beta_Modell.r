@@ -50,10 +50,10 @@ model.function <- nimbleCode({
 beta_rand <- nimbleMCMC(
   code = model.function, constants = model.constants,
   data = model.data, inits = model.inits,
-  monitors = parameters, nchains = 3, niter = 5000,
-  nburnin = 2000, thin = 1, setSeed = c(1,2,3),
+  monitors = parameters, nchains = 3, niter = 15000,
+  nburnin = 10000, thin = 5, setSeed = c(1,2,3),
   samplesAsCodaMCMC = T, samples = T, # get an coda object instead of plain values
   WAIC = T ) # get the WAIC
 
-data$fail
+saveRDS(beta_rand, file = "..\\data\\mcmc_res\\beta_rand.rds")
 

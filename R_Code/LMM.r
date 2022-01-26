@@ -1,5 +1,6 @@
 library(nimble)
 library(coda)
+
 ## if directly run use this lines first to get the data setup
 data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 data$id <- as.numeric(data$id)
@@ -38,9 +39,8 @@ sofa_lmm <- nimbleMCMC(
   code = model.function, constants = model.constants,
   data = model.data, inits = model.inits,
   monitors = parameters, nchains = 3, niter = 5000,
-  nburnin = 2000, thin = 1, setSeed = c(1,2,3),
+  nburnin = 2000, thin = 10, setSeed = c(1,2,3),
   samplesAsCodaMCMC = T, samples = T, # get an coda object instead of plain values
   WAIC = T ) # get the WAIC
-
-data$fail
+saveRDS(sofa_lmm, file = "..\\data\\mcmc_res\\sofa_lmm.Rds")
 

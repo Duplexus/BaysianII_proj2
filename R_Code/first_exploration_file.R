@@ -1,9 +1,15 @@
 getwd()
 
+
+data <- readRDS("data\\AIdataset.Rds")
+age_real <- data$age
+day_real <- data$day
 data <- readRDS("data\\AIdataset_normalized.Rds")
 #prepare for excercise 3
-data$fail <- ifelse(data$fail2 == 2, 0, data$fail)
+data$fail <- ifelse(data$fail == 2, 0, data$fail)
 
+data$day <- data$day +  mean(day_real)
+data  %>%  group_by(id) %>%  summarise(test123 = min(day))
 
 #### some Plots ####
 library(ggplot2)

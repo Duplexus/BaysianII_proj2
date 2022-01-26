@@ -56,10 +56,11 @@ ai_spline_day <- nimbleMCMC(
   code = model.function, constants = model.constants,
   data = model.data, inits = model.inits,
   monitors = parameters, nchains = 3, niter = 5000,
-  nburnin = 2000, thin = 1, setSeed = c(1,2,3),
+  nburnin = 2000, thin = 10, setSeed = c(1,2,3),
   samplesAsCodaMCMC = T, samples = T, # get an coda object instead of plain values
   WAIC = T ) # get the WAIC
 t_1 <- Sys.time()
 time_linear <- t_1 - t_0
 time_linear
+saveRDS(ai_spline_day, file = "..\\data\\mcmc_res\\ai_spline_day.Rds")
 
