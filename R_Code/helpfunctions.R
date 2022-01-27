@@ -80,6 +80,7 @@ data  output of coda
 "
 
 summarise_default <- function(data){
+  library("coda")
   cat("\n That is the effective sample size \n\n")
   print(effectiveSize(data))
   #Tine-series SE is monte carlo standard error var von dem ding durch samplsize

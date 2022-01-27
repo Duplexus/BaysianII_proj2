@@ -38,34 +38,19 @@ cor(data$sofa[exists], y_pred_lmm[exists])
 
 data$sofa_pred <- y_pred_lmm
 ```
-
-
+##Playing with the Randoms
 ## Beta beta_rand
 ### some Summary
+
 ```{r }
 source("helpfunctions.r")
 #source("Beta_Modell.r")
 #result ist beta_rand
 beta_rand <- readRDS("..\\data\\mcmc_res\\beta_rand.rds")
-
-lowe_beta_rand <- readRDS("..\\data\\mcmc_res\\lowe_beta_rand.rds")
-lowe_beta_rand$WAIC$WAIC
-```
-
-###Test if in general sensitive to changing added value
-```{r }
-lowe_ai_spline_age <- readRDS("..\\data\\mcmc_res\\lowe_ai_spline_age.rds")
-lowe_ai_spline_age$WAIC$WAIC
-
-lowe_ai_day_pen_spline <- readRDS("..\\data\\mcmc_res\\lowe_ai_day_pen_spline.Rds")
-lowe_ai_day_pen_spline$WAIC$WAIC
-
-```
-
-```{r }
 ai_beta <- subset_coda_params(data = beta_rand$samples, variable = c("beta0", "beta1", "beta2","sigma_b0","phi"))
 beta_rand$WAIC$WAIC
 summarise_default(ai_beta)
+
 ```
 
 ### Explore predictions since this one yields the best results, we stick with this model
@@ -145,14 +130,14 @@ data$ai2 <- data$ai + 1e-3
 devi <- get_params(c("Deviance"),beta_rand$samples,functions_ = function(x)x)
 md <- mean(devi)
 # plot(dbeta((1:999) *0.001,1.5,24))
-beta_means <- get_params(c("beta0", "beta1","beta2","sigma_b0","phi","b0"),beta_rand$samples)
+beta_means <- get_params(c("beta0", "beta_age","beta_day","sigma_b0","phi","b0"),beta_rand$samples)
 #age and day are transformed therefore also here some transofrmation
 b0_means <- get_params(c("b0"),beta_rand$samples)
 b0_subset <- b0_means[data$id]
 #plot(density(b0_means))
 age <- data$age
 day <- data$day
-mu <- expit(beta_means["beta0"]+beta_means["beta1"]*data$age + beta_means["beta2"]*data$day+b0_subset)
+mu <- expit(beta_means["beta0"]+beta_means["beta_age"]*data$age + beta_means["beta_day"]*data$day+b0_subset)
 phi <- beta_means["phi"]
 a <- mu * phi
 b <- (1 - mu) * phi
@@ -177,7 +162,91 @@ data$id[order(ippo,decreasing = T)][1:7]
 LPML_beta <- mean(log(cpo))
 LPML_beta
 ```
+## linear random slope
+### with rand_slope standard
+```{r }
+beta_rand_rslope<- readRDS("..\\data\\mcmc_res\\beta_rand_rslope.rds")
 
+ai_beta_rand_rslope <- subset_coda_params(data = beta_rand_rslope$samples, variable = c("beta_age", "beta_day", "beta0","sigma_b0","phi","sigma_b1"))
+
+summarise_default(ai_beta_rand_rslope)
+
+```
+### prediction final 
+```{r }
+y_pred_ai <- get_params(c("y_pred"),beta_rand_rslope$samples)
+data_to_exp <- data.frame(id = data$id, day = data$day, ai_pred = y_pred_ai)
+```
+### with ai_spline_age_rslope
+```{r }
+ai_spline_age_rslope<- readRDS("..\\data\\mcmc_res\\ai_spline_age_rslope.Rds")
+
+ai_beta_li_ti <- subset_coda_params(data = ai_spline_age_rslope$samples, variable = c("beta_age", "beta_day", "beta0","sigma_b0","phi","sigma_b1"))
+
+summarise_default(ai_beta_li_ti)
+
+```
+## squared random slope
+### some Summary
+```{r }
+beta_rand_rslope_square<- readRDS("..\\data\\mcmc_res\\beta_rand_rslope_square.rds")
+
+ai_beta_sq_ti <- subset_coda_params(data = beta_rand$samples, variable = c("beta_age", "beta_day", "beta0","sigma_b0","phi","sigma_b1","sigma_b2"))
+beta_rand$WAIC$WAIC
+summarise_default(ai_beta_sq_ti)
+
+```
+## triple random slope
+### some Summary
+```{r }
+beta_rand_rslope_trip<- readRDS("..\\data\\mcmc_res\\beta_rand_rslope_trip.rds")
+
+ai_beta_rand_rslope_trip <- subset_coda_params(data = beta_rand_rslope_trip$samples, variable = c("beta_age", "beta_day", "beta0","sigma_b0","phi","sigma_b1","sigma_b2"))
+summarise_default(ai_beta_rand_rslope_trip)
+
+```
+
+## Random slope  wishart
+### some Summary
+```{r }
+beta_rand_rslope_wish<- readRDS("..\\data\\mcmc_res\\beta_rand_rslope_wish2.rds")
+
+ai_beta_rand_rslope_wish <- subset_coda_params(data = beta_rand_rslope_wish$samples, variable = c("beta0","beta_age","beta_day","phi","Deviance","sigma2_11","sigma2_12","sigma2_22"))
+                                               
+summarise_default(ai_beta_rand_rslope_wish)
+beta_rand_rslope_wish$WAIC$WAIC
+```
+##Playing with the ai increase value 1e-6 instead of 1e-3
+## normal beta model with random intercept
+### some Summary
+```{r }
+lowe_beta_rand <- readRDS("..\\data\\mcmc_res\\lowe_beta_rand.rds")
+
+ai_lowe_beta_rand <- subset_coda_params(data = lowe_beta_rand$samples, variable = c("beta_age", "beta_day", "beta0","sigma_b0","phi"))
+summarise_default(ai_lowe_beta_rand)
+```
+## with spline age
+### some Summary
+does not really converge
+```{r }
+lowe_ai_spline_age <- readRDS("..\\data\\mcmc_res\\lowe_ai_spline_age.rds")
+
+ai_lowe_ai_spline_age <- subset_coda_params(data = lowe_ai_spline_age$samples, variable = c("beta_age", "beta_day", "beta0","sigma_b0","phi"))
+summarise_default(ai_lowe_ai_spline_age)
+```
+
+## with spline pen day
+### some Summary
+does not really converge
+```{r }
+lowe_ai_day_pen_spline <- readRDS("..\\data\\mcmc_res\\lowe_ai_day_pen_spline.Rds")
+
+ai_lowe_ai_day_pen_spline <- subset_coda_params(data = lowe_ai_day_pen_spline$samples, variable = c("beta_age", "beta_day", "beta0","sigma_b0","phi"))
+summarise_default(ai_lowe_ai_day_pen_spline)
+```
+
+
+##Playing with the Fixed
 ## Beta Age Spline ai_spline_age
 ```{r}
 source("helpfunctions.r")
@@ -197,7 +266,8 @@ ai_spline_age$WAIC$WAIC
 
 ### Plotting
 ```{r}
-
+data <- readRDS("..\\data\\AIdataset_normalized.Rds")
+data$ai <- data$ai + 1e-3
 #beta 1 age beta2 day
 beta_means <- get_params(c("beta0", "beta_age", "beta2","sigma_b0","phi"),ai_spline_age$samples)
 #age and day are transformed therefore also here some transofrmation
@@ -344,7 +414,7 @@ day <- data$day
 
 a <- mu * phi
 b <- (1 - mu) * phi
-pd <- md - (-2*sum(dbeta(data$ai2, a , b,log = T)))
+pd <- md - (-2*sum(dbeta(data$ai, a , b,log = T)))
 c(pd,md,pd+md)
 plot(density(b0_means))
 ```
@@ -439,7 +509,7 @@ LPML_ai_spline_age_day
 ## Beta P-Bsplines Day
 ```{r}
 #source("..\\R_code\\Beta_Modell_day_pen_spline.r")
-ai_pspline_day <-readRDS("..\\data\\mcmc_res\\day_pen_spline.Rds")
+ai_pspline_day <-readRDS("..\\data\\mcmc_res\\ai_day_pen_spline.Rds")
 #result is ai_spline_age_day
 ```
 
@@ -535,8 +605,29 @@ LPML_ai_pspline_age
 ```
 ## WAIC comparison
 ```{r}
+
+cat("Default\n")
 cat("no spline WAIC\n")
 beta_rand$WAIC$WAIC
+
+cat("\n\n fixed effects\n")
+cat("\n random slope\n")
+beta_rand_rslope$WAIC$pWAIC
+beta_rand_rslope$WAIC$WAIC
+cat("\n random slope wishart\n")
+beta_rand_rslope_wish$WAIC$pWAIC
+beta_rand_rslope_wish$WAIC$WAIC
+cat("\n random slope quadrat\n")
+beta_rand_rslope_square$WAIC$pWAIC
+beta_rand_rslope_square$WAIC$WAIC
+cat("\n random slope trip\n")
+beta_rand_rslope_trip$WAIC$pWAIC
+beta_rand_rslope_trip$WAIC$WAIC
+
+cat("\n\n different value added to ai 1e-6 instead of 1e-3\n")
+lowe_beta_rand$WAIC$WAIC
+
+cat("\n\n fixed effects\n")
 cat("\n spline age WAIC\n")
 ai_spline_age$WAIC$WAIC
 cat("\n spline day WAIC\n")
@@ -547,6 +638,16 @@ cat("\n pspline day WAIC\n")
 ai_pspline_day$WAIC$WAIC
 cat("\n pspline age WAIC\n")
 ai_pspline_age$WAIC$WAIC
+
+cat("\n\n Mixed\n")
+cat("\n spline age rand slope\n")
+ai_spline_age_rslope$WAIC$WAIC
+cat("\n 1e-6 day pen spline\n")
+lowe_ai_day_pen_spline$WAIC$WAIC
+cat("\n 1e-6 age spline\n")
+lowe_ai_spline_age$WAIC$WAIC
+
+
 ```
 ## LPML (Bayes Factor)
 ```{r}

@@ -66,5 +66,3 @@ ai_spline_day <- nimbleMCMC(
   samplesAsCodaMCMC = T, samples = T, # get an coda object instead of plain values
   WAIC = T ) # get the WAIC
 saveRDS(ai_spline_day, file = "..\\data\\mcmc_res\\ai_spline_day.Rds")
-
-rm(data2)
