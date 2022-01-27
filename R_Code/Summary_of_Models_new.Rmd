@@ -5,17 +5,34 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library("nimble")
 library("coda")
 library("splines2")
+library("dplyr")
+library("ggplot2")
+mainDir <- setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+path_graph <- "..\\Graphics"
+dir.create(file.path(mainDir,path_graph ), showWarnings = FALSE)
+dir.create(file.path(mainDir, "..\\data\\mcmc_res"), showWarnings = FALSE)
+
 ```
 
 ```{r }
 data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 source("..\\R_Code\\helpfunctions.r")
-# #source("..\\R_Code\\lmm.r")
+#just activate the following line if really needed, better only one by one else it will take forever (on my pc about 10h if there is somwhere an error I am really sry but I will upload all my data to googledrive so one does not have to run all these files: https://drive.google.com/drive/folders/12scKFb0xsSppf2tg67rYIyYbOhCXwJed?usp=sharing there is all the data that is neccesary to run all code and if there is still something unclear pls wirte a Mail regards Valentin)
 # #source("..\\R_Code\\Beta_Modell.r")
 # source("..\\R_Code\\Beta_Modell_age_spline.r")
 # source("..\\R_Code\\Beta_Modell_day_spline.r")
 # source("..\\R_Code\\Beta_Modell_age_day_spline.r")
 # source("..\\R_Code\\Beta_Modell_day_pen_spline.r")
+# source("..\\R_Code\\Beta_Modell_rand_spline.r")
+# source("..\\R_Code\\lowe_Beta_Modell.r")
+# source("..\\R_Code\\lowe_Beta_Modell_age_spline.r")
+# source("..\\R_Code\\Beta_Modell_rslope_square.r")
+# source("..\\R_Code\\Beta_Modell_rslope.r)
+# source("..\\R_Code\\Beta_Modell_rslope_triple.r)
+# source("..\\R_Code\\Beta_Modell_rslope_test.r)
+# source("..\\R_Code\\Beta_Modell_rslope_wish.r)
+# source("..\\R_Code\\Beta_Modell_rslope_age_spline.r)
+
 ```
 ##Playing with the Randoms
 ## Beta beta_rand
@@ -77,10 +94,10 @@ summarise_default(ai_beta_li_ti)
 source("helpfunctions.r")
 beta_means <- get_params(c("beta0", "beta_age", "beta_day","phi"),beta_rand$samples,functions_ = function(x)x)
 age_orig <- 55
-day_orig <- c(-10:18)
+day_orig <- c(-20:18)
 #random <- 0.42
-random <- 0.4
-get_params("sigma_b0",beta_rand$samples)
+rand <- 2*(get_params("sigma_b0",beta_rand$samples))
+
 
 beta_day_spline <- function(x){
   mu <- expit(x["beta0"]+x["beta_age"]*age_orig + x["beta_day"]*day_orig)
@@ -101,38 +118,47 @@ plot(data$day, data$ai,  pch = 19, lwd = 1.5,
 lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
 lines(day_orig,gr1_mid, col = 2, lwd = 3)
 lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
-# legend("topright", legend = c("SS", "HB"),lwd = 3,
-#                lty = 1,col = c(2,3),
-#                title = "Groups")
 
 
-# source("helpfunctions.r")
-# #beta 1 age beta2 day
-# beta_means <- get_params(c("beta0", "beta1","beta2","sigma_b0","phi"),beta_rand$samples)
-# #age and day are transformed therefore also here some transofrmation
-# age <- -0
-# day <- c(-6,22)
-# 
-# mu <- expit(beta_means["beta0"]+beta_means["beta1"]*age + beta_means["beta2"]*day)
-# phi <- beta_means["phi"]
-# a <- mu * phi
-# b <- (1 - mu) * phi
-# 
-# gr1_low <- qbeta(0.025, a , b)
-# gr1_mid <- qbeta(0.5, a , b)
-# gr1_up <- qbeta(0.975, a , b)
-# 
-# plot(data$day, data$ai,  pch = 19, lwd = 1.5,
-#       xlab = "Days", cex.lab = 1.8,
-#      ylab = "Overall survival probability")
-# lines(day,gr1_low, col = 2,lty = 2, lwd = 3)
-# lines(day,gr1_mid, col = 2, lwd = 3)
-# lines(day,gr1_up, col = 2,lty = 2, lwd = 3)
-# legend("topright", legend = c("SS", "HB"),lwd = 3,
-#                lty = 1,col = c(2,3),
-#                title = "Groups")
 
 
+pdf(file.path(mainDir,path_graph,"Plot1_i.pdf"), width = 7, height = 5)
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.5,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+dev.off()
+
+beta_day_spline <- function(x){
+  mu <- expit(rand*2+x["beta0"]+x["beta_age"]*age_orig + x["beta_day"]*day_orig)
+  phi <- x["phi"]
+  a <- mu * phi
+  b <- (1 - mu) * phi
+  return(qbeta(0.5, a , b))
+}
+est_values <- (apply(beta_means,1,beta_day_spline))
+get_estimates <- apply(est_values,1,quantile,c(0.025,0.5,0.975))
+gr1_low <- get_estimates[1,]
+gr1_mid <- get_estimates[2,]
+gr1_up  <- get_estimates[3,] 
+
+pdf(file.path(mainDir,path_graph,"Plot2_2sd.pdf"), width = 7, height = 5)
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.5,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+dev.off()
+
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.5,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
 ```
 
 ###Compute DIC
@@ -208,7 +234,81 @@ for( i in 1:nrow(x_v)){
 }
 y_pred_lin <- apply(values,2,mean)
 ```
-### with ai_spline_age_rslope
+### some Plots
+
+```{r}
+source("helpfunctions.r")
+beta_means <- get_params(c("beta0", "beta_age", "beta_day","phi"),beta_rand_rslope$samples,functions_ = function(x)x)
+age_orig <- 55
+day_orig <- c(-20:18)
+#random <- 0.42
+
+rand <- get_params("sigma_b0",beta_rand_rslope$samples)
+
+timi <- get_params("sigma_b1",beta_rand_rslope$samples)
+
+beta_day_spline <- function(x){
+  mu <- expit(x["beta0"]+x["beta_age"]*age_orig + x["beta_day"]*day_orig)
+  phi <- x["phi"]
+  a <- mu * phi
+  b <- (1 - mu) * phi
+  return(qbeta(0.5, a , b))
+}
+est_values <- (apply(beta_means,1,beta_day_spline))
+get_estimates <- apply(est_values,1,quantile,c(0.025,0.5,0.975))
+
+gr1_low <- get_estimates[1,]
+gr1_mid <- get_estimates[2,]
+gr1_up  <- get_estimates[3,] 
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.8,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+
+
+
+
+pdf(file.path(mainDir,path_graph,"Plot3_i.pdf"), width = 7, height = 5)
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.5,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+dev.off()
+
+beta_day_spline <- function(x){
+  mu <- expit(rand*2+x["beta0"]+x["beta_age"]*age_orig + x["beta_day"]*day_orig+ 2*timi*x["beta_day"])
+  phi <- x["phi"]
+  a <- mu * phi
+  b <- (1 - mu) * phi
+  return(qbeta(0.5, a , b))
+}
+est_values <- (apply(beta_means,1,beta_day_spline))
+get_estimates <- apply(est_values,1,quantile,c(0.025,0.5,0.975))
+gr1_low <- get_estimates[1,]
+gr1_mid <- get_estimates[2,]
+gr1_up  <- get_estimates[3,] 
+
+pdf(file.path(mainDir,path_graph,"Plot4_2sd.pdf"), width = 7, height = 5)
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.5,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+dev.off()
+
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.5,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+```
+## with ai_spline_age_rslope
 ```{r }
 ai_spline_age_rslope<- readRDS("..\\data\\mcmc_res\\ai_spline_age_rslope.Rds")
 
@@ -253,36 +353,81 @@ for( i in 1:nrow(x_v)){
   values[i,] <- val 
 }
 y_pred_sq <- apply(values,2,mean)
-# 
-# sum(is.na(values))
-# age_orig <- 55
-# day_orig <- c(-10:18)
-# #random <- 0.42
-# random <- 0.4
-# get_params("sigma_b0",beta_rand$samples)
-# 
-# beta_day_spline <- function(x){
-#   mu <- expit(x["beta0"]+x["beta_age"]*age_orig + x["beta_day"]*day_orig)
-#   phi <- x["phi"]
-#   a <- mu * phi
-#   b <- (1 - mu) * phi
-#   return(qbeta(0.5, a , b))
-# }
-# est_values <- (apply(beta_means,1,beta_day_spline))
-# get_estimates <- apply(est_values,1,quantile,c(0.025,0.5,0.975))
-# 
-# gr1_low <- get_estimates[1,]
-# gr1_mid <- get_estimates[2,]
-# gr1_up  <- get_estimates[3,] 
-# plot(data$day, data$ai,  pch = 19, lwd = 1.5,
-#       xlab = "Days", cex.lab = 1.8,
-#      ylab = "AI Score", col = data$id)
-# lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
-# lines(day_orig,gr1_mid, col = 2, lwd = 3)
-# lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
-# # legend("topright", legend = c("SS", "HB"),lwd = 3,
-# #                lty = 1,col = c(2,3),
-# #                title = "Groups")
+```
+### some Plots
+
+```{r}
+source("helpfunctions.r")
+beta_means <- get_params(c("beta0", "beta_age", "beta_day","phi"),beta_rand_rslope_sq$samples,functions_ = function(x)x)
+age_orig <- 55
+day_orig <- c(-20:18)
+#random <- 0.42
+
+rand <- get_params("sigma_b0",beta_rand_rslope_sq$samples)
+
+timi <- sqrt(get_params("sigma_b1",beta_rand_rslope_sq$samples))
+timi2 <- sqrt(get_params("sigma_b2",beta_rand_rslope_sq$samples))
+
+beta_day_spline <- function(x){
+  mu <- expit(x["beta0"]+x["beta_age"]*age_orig + x["beta_day"]*day_orig)
+  phi <- x["phi"]
+  a <- mu * phi
+  b <- (1 - mu) * phi
+  return(qbeta(0.5, a , b))
+}
+est_values <- (apply(beta_means,1,beta_day_spline))
+get_estimates <- apply(est_values,1,quantile,c(0.025,0.5,0.975))
+
+gr1_low <- get_estimates[1,]
+gr1_mid <- get_estimates[2,]
+gr1_up  <- get_estimates[3,] 
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.8,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+
+
+
+
+pdf(file.path(mainDir,path_graph,"Plot5_i.pdf"), width = 7, height = 5)
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.5,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+dev.off()
+
+beta_day_spline <- function(x){
+  mu <- expit(rand*2+x["beta0"]+x["beta_age"]*age_orig + x["beta_day"]*day_orig+ 2*timi*x["beta_day"]+2*timi2*(x["beta_day"])^2)
+  phi <- x["phi"]
+  a <- mu * phi
+  b <- (1 - mu) * phi
+  return(qbeta(0.5, a , b))
+}
+est_values <- (apply(beta_means,1,beta_day_spline))
+get_estimates <- apply(est_values,1,quantile,c(0.025,0.5,0.975))
+gr1_low <- get_estimates[1,]
+gr1_mid <- get_estimates[2,]
+gr1_up  <- get_estimates[3,] 
+
+pdf(file.path(mainDir,path_graph,"Plot6_2sd.pdf"), width = 7, height = 5)
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.5,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+dev.off()
+
+plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+      xlab = "Days", cex.lab = 1.5,
+     ylab = "AI Score", col = data$id)
+lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+lines(day_orig,gr1_mid, col = 2, lwd = 3)
+lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
 ```
 ## triple random slope
 ### some Summary
@@ -773,7 +918,7 @@ cor(data.frame(def =data$ai,int = y_pred_int,lin = y_pred_lin,sq = y_pred_sq))
 ```{r}
 
 plot(0:100,quantile(data$ai,(0:100)*0.01),type = "l", lwd = 3,
-      xlab = "Percent", cex.lab = 1.8,
+      xlab = "Percent", cex.lab = 1.5,
      ylab = "Estimation")
 lines(quantile(y_pred_int,(0:100)*0.01), col = 2,lty = 2, lwd = 3)
 lines(quantile(y_pred_lin,(0:100)*0.01), col = 3,lty = 2, lwd = 3)
@@ -781,6 +926,19 @@ lines(quantile(y_pred_sq,(0:100)*0.01), col = 4,lty = 2, lwd = 3)
 legend("topleft", legend = c("default", "ran intercep", "ran slope", "ran squared"),lwd = 3,
                lty = c(1,2,2,2),col = c(1,2,3,4),
                title = "Groups")
+
+pdf(file.path(mainDir,path_graph,"Plot7.pdf"), width = 7, height = 5)
+plot(0:100,quantile(data$ai,(0:100)*0.01),type = "l", lwd = 3,
+      xlab = "Percent", cex.lab = 1.5,
+     ylab = "Estimation")
+lines(quantile(y_pred_int,(0:100)*0.01), col = 2,lty = 2, lwd = 3)
+lines(quantile(y_pred_lin,(0:100)*0.01), col = 3,lty = 2, lwd = 3)
+lines(quantile(y_pred_sq,(0:100)*0.01), col = 4,lty = 2, lwd = 3)
+legend("topleft", legend = c("default", "ran intercep", "ran slope", "ran squared"),lwd = 3,
+               lty = c(1,2,2,2),col = c(1,2,3,4),
+               title = "Groups")
+dev.off()
+
 
 
 ```
