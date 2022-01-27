@@ -22,7 +22,7 @@ model.inits <- list(
   list(beta0 = 0.5, beta_age=1, beta_day = -0.1, phi = 10, sigma_b0 = 1.5, sigma_b1 = 1,sigma_b2 = 1,b0 = rep(0.2,times = subjects), b1 = rep(0.0,times = subjects), b2 = rep(0.0,times = subjects)),
   list(beta0 = 1,   beta_age=1, beta_day = 0.1,  phi = 7, sigma_b0 = 0.5, sigma_b1 = 1, sigma_b2 = 1,b0 = rep(0.3,times = subjects), b1 = rep(0.0,times = subjects), b2 = rep(0.0,times = subjects))
 )
-parameters = c("beta0", "beta_age", "beta_day","sigma_b0","sigma_b1","sigma_b2","phi","Deviance","ppo","b0")
+parameters = c("beta0", "beta_age", "beta_day","sigma_b0","sigma_b1","sigma_b2","phi","Deviance","ppo","b0","b1","b2")
 
 model.constants <- list( N = length(data1$sofa), x1 = data1$age,
                          id = data1$id, x2 = data1$day,  Nsubj = length(unique(data1$id)))
@@ -38,19 +38,30 @@ model.function <- nimbleCode({
     ppo[i] <- dbeta(y[i],a[i], b[i])
     D[i] <- -2*log(ppo[i])
   }
+  # for (i in 1:N){
+  #   a_1[i] <- a[i]
+  #   b_1[i] <- b[i]
+  #   y_pred[i] ~ dbeta(a_1[i], b_1[i])
+  # }
   #priors
   Deviance <- sum(D[1:N])
   phi ~ dunif(0,10000)
-  sigma_b0 ~ dgamma(0.001, 0.001)
-  sigma_b1 ~ dgamma(0.001, 0.001)
-  sigma_b2 ~ dgamma(0.001, 0.001)
+
   beta0 ~ dnorm(0,sd = 1000)
   beta_age ~ dnorm(0,sd = 1000)
   beta_day ~ dnorm(0,sd = 1000)
+  
+  sigma_b0 ~ dunif(0,10000)
+  tau_b0 <- 1/sigma_b0
+  sigma_b1 ~ dunif(0,10000)
+  tau_b1 <- 1/sigma_b1
+  sigma_b2 ~ dunif(0,10000)
+  tau_b2 <- 1/sigma_b2
+
   for ( i in 1:Nsubj){
-    b0[i] ~ dnorm(0,sd = sigma_b0)
-    b1[i] ~ dnorm(0,sd = sigma_b1)
-    b2[i] ~ dnorm(0,sd = sigma_b2)
+    b0[i] ~ dnorm(0,tau_b0)
+    b1[i] ~ dnorm(0,tau_b1)
+    b2[i] ~ dnorm(0,tau_b2)
   }
 })
 
@@ -63,4 +74,3 @@ beta_rand <- nimbleMCMC(
   WAIC = T ) # get the WAIC
 
 saveRDS(beta_rand, file = "..\\data\\mcmc_res\\beta_rand_rslope_square.rds")
-

@@ -8,6 +8,7 @@ library("splines2")
 ```
 
 ```{r }
+data <- readRDS("..\\data\\AIdataset_normalized.Rds")
 source("..\\R_Code\\helpfunctions.r")
 # #source("..\\R_Code\\lmm.r")
 # #source("..\\R_Code\\Beta_Modell.r")
@@ -15,28 +16,6 @@ source("..\\R_Code\\helpfunctions.r")
 # source("..\\R_Code\\Beta_Modell_day_spline.r")
 # source("..\\R_Code\\Beta_Modell_age_day_spline.r")
 # source("..\\R_Code\\Beta_Modell_day_pen_spline.r")
-```
-
-## LMM sofa
-```{r }
-sofa_lmm <- readRDS("..\\data\\mcmc_res\\sofa_lmm.Rds")
-
-```
-```{r }
-sofa_lmms <- subset_coda_params(data = sofa_lmm$samples, variable = c("sigma2", "beta0", "beta1", "beta2","sigma2_b0","tau"))
-cat("\n the WAIC \n")
-sofa_lmm$WAIC$WAIC
-summarise_default(sofa_lmms)
-```
-
-### Explore predictions
-```{r }
-y_pred_lmm <- get_params(c("y_pred"),sofa_lmm$samples)
-plot(data$sofa, y_pred_lmm)
-exists <- !is.na(data$sofa)
-cor(data$sofa[exists], y_pred_lmm[exists])
-
-data$sofa_pred <- y_pred_lmm
 ```
 ##Playing with the Randoms
 ## Beta beta_rand
@@ -53,12 +32,44 @@ summarise_default(ai_beta)
 
 ```
 
-### Explore predictions since this one yields the best results, we stick with this model
+### Explore predictions since this one yields the best results, but it was a bit wired so I switched the estimation process
 ```{r }
-#that got canceled for the moment to save some more room
-y_pred_beta <- get_params(c("y_pred"),beta_rand$samples)
-data$ai_pred <- y_pred_beta
-saveRDS(data, file = "..\\data\\Prep_data_for_ex3.rds")
+# #that got canceled for the moment to save some more room
+# y_pred_beta <- get_params(c("y_pred"),beta_rand$samples)
+# data$ai_pred <- y_pred_beta
+# saveRDS(data, file = "..\\data\\Prep_data_for_ex3.rds")
+```
+### pred vanilla
+```{r }
+beta_randi<- readRDS("..\\data\\mcmc_res\\beta_rand.rds")
+
+
+x_v <- get_params(c("beta0", "beta_age", "beta_day","phi"),beta_randi$samples,functions_ = function(x)x)
+b0_v <- get_params(c("b0"),beta_randi$samples,functions_ = function(x)x)
+
+
+values<- matrix(nrow = nrow(x_v), ncol = length(data$day))
+library(nimble)
+set.seed(100)
+for( i in 1:nrow(x_v)){
+  id_rand <- as.numeric(data$id)
+  mu <- expit(x_v[i,1]+x_v[i,2]*data$age +  x_v[i,3]*data$day+ b0_v[i,id_rand])
+  phi <- x_v[i,4]
+  a <- mu * phi
+  b <- (1 - mu) * phi
+  val <- rbeta(rep(1,length(a)),a,b)
+  values[i,] <- val 
+}
+y_pred_int <- apply(values,2,mean)
+```
+### with ai_spline_age_rslope
+```{r }
+ai_spline_age_rslope<- readRDS("..\\data\\mcmc_res\\ai_spline_age_rslope.Rds")
+
+ai_beta_li_ti <- subset_coda_params(data = ai_spline_age_rslope$samples, variable = c("beta_age", "beta_day", "beta0","sigma_b0","phi","sigma_b1"))
+
+summarise_default(ai_beta_li_ti)
+
 ```
 ### some Plots
 
@@ -83,7 +94,7 @@ get_estimates <- apply(est_values,1,quantile,c(0.025,0.5,0.975))
 
 gr1_low <- get_estimates[1,]
 gr1_mid <- get_estimates[2,]
-gr1_up  <- get_estimates[3,]
+gr1_up  <- get_estimates[3,] 
 plot(data$day, data$ai,  pch = 19, lwd = 1.5,
       xlab = "Days", cex.lab = 1.8,
      ylab = "AI Score", col = data$id)
@@ -123,6 +134,7 @@ lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
 
 
 ```
+
 ###Compute DIC
 ```{r}
 #beta 1 age beta2 day
@@ -172,10 +184,29 @@ ai_beta_rand_rslope <- subset_coda_params(data = beta_rand_rslope$samples, varia
 summarise_default(ai_beta_rand_rslope)
 
 ```
-### prediction final 
+### prediction random slope
 ```{r }
-y_pred_ai <- get_params(c("y_pred"),beta_rand_rslope$samples)
-data_to_exp <- data.frame(id = data$id, day = data$day, ai_pred = y_pred_ai)
+beta_rand_rslope<- readRDS("..\\data\\mcmc_res\\beta_rand_rslope.rds")
+
+
+x_v <- get_params(c("beta0", "beta_age", "beta_day","phi"),beta_rand_rslope$samples,functions_ = function(x)x)
+b1_v <- get_params(c("b1"),beta_rand_rslope$samples,functions_ = function(x)x)
+b0_v <- get_params(c("b0"),beta_rand_rslope$samples,functions_ = function(x)x)
+
+
+values<- matrix(nrow = nrow(x_v), ncol = length(data$day))
+library(nimble)
+set.seed(10)
+for( i in 1:nrow(x_v)){
+  id_rand <- as.numeric(data$id)
+  mu <- expit(x_v[i,1]+x_v[i,2]*data$age +  x_v[i,3]*data$day+ b0_v[i,id_rand]+ b1_v[i,id_rand]*data$day)
+  phi <- x_v[i,4]
+  a <- mu * phi
+  b <- (1 - mu) * phi
+  val <- rbeta(rep(1,length(a)),a,b)
+  values[i,] <- val 
+}
+y_pred_lin <- apply(values,2,mean)
 ```
 ### with ai_spline_age_rslope
 ```{r }
@@ -191,10 +222,67 @@ summarise_default(ai_beta_li_ti)
 ```{r }
 beta_rand_rslope_square<- readRDS("..\\data\\mcmc_res\\beta_rand_rslope_square.rds")
 
-ai_beta_sq_ti <- subset_coda_params(data = beta_rand$samples, variable = c("beta_age", "beta_day", "beta0","sigma_b0","phi","sigma_b1","sigma_b2"))
-beta_rand$WAIC$WAIC
+ai_beta_sq_ti <- subset_coda_params(data = beta_rand_rslope_square$samples, variable = c("beta_age", "beta_day", "beta0","sigma_b0","phi","sigma_b1","sigma_b2"))
+beta_rand_rslope_square$WAIC$WAIC
 summarise_default(ai_beta_sq_ti)
 
+```
+
+### Predict square Values
+```{r}
+source("helpfunctions.r")
+beta_rand_rslope_sq<- readRDS("..\\data\\mcmc_res\\beta_rand_rslope_square.rds")
+
+
+x_v <- get_params(c("beta0", "beta_age", "beta_day","phi"),beta_rand_rslope_sq$samples,functions_ = function(x)x)
+b2_v <- get_params(c("b2"),beta_rand_rslope_sq$samples,functions_ = function(x)x)
+b1_v <- get_params(c("b1"),beta_rand_rslope_sq$samples,functions_ = function(x)x)
+b0_v <- get_params(c("b0"),beta_rand_rslope_sq$samples,functions_ = function(x)x)
+
+
+values<- matrix(nrow = nrow(x_v), ncol = length(data$day))
+library(nimble)
+set.seed(10)
+for( i in 1:nrow(x_v)){
+  id_rand <- as.numeric(data$id)
+  mu <- expit(x_v[i,1]+x_v[i,2]*data$age +  x_v[i,3]*data$day+ b0_v[i,id_rand]+ b1_v[i,id_rand]*data$day+ b2_v[i,id_rand]*(data$day)^2)
+  phi <- x_v[i,4]
+  a <- mu * phi
+  b <- (1 - mu) * phi
+  val <- rbeta(rep(1,length(a)),a,b)
+  values[i,] <- val 
+}
+y_pred_sq <- apply(values,2,mean)
+# 
+# sum(is.na(values))
+# age_orig <- 55
+# day_orig <- c(-10:18)
+# #random <- 0.42
+# random <- 0.4
+# get_params("sigma_b0",beta_rand$samples)
+# 
+# beta_day_spline <- function(x){
+#   mu <- expit(x["beta0"]+x["beta_age"]*age_orig + x["beta_day"]*day_orig)
+#   phi <- x["phi"]
+#   a <- mu * phi
+#   b <- (1 - mu) * phi
+#   return(qbeta(0.5, a , b))
+# }
+# est_values <- (apply(beta_means,1,beta_day_spline))
+# get_estimates <- apply(est_values,1,quantile,c(0.025,0.5,0.975))
+# 
+# gr1_low <- get_estimates[1,]
+# gr1_mid <- get_estimates[2,]
+# gr1_up  <- get_estimates[3,] 
+# plot(data$day, data$ai,  pch = 19, lwd = 1.5,
+#       xlab = "Days", cex.lab = 1.8,
+#      ylab = "AI Score", col = data$id)
+# lines(day_orig,gr1_low, col = 2,lty = 2, lwd = 3)
+# lines(day_orig,gr1_mid, col = 2, lwd = 3)
+# lines(day_orig,gr1_up, col = 2,lty = 2, lwd = 3)
+# # legend("topright", legend = c("SS", "HB"),lwd = 3,
+# #                lty = 1,col = c(2,3),
+# #                title = "Groups")
 ```
 ## triple random slope
 ### some Summary
@@ -663,4 +751,34 @@ cat("\n pspline day WAIC\n")
 LPML_ai_pspline_day
 cat("\n pspline age WAIC\n")
 LPML_ai_pspline_age
+```
+
+
+## Prediction Comparison
+```{r}
+cat("Data \n")
+quantile(data$ai)
+cat("\n only random intercept\n")
+quantile(y_pred_int)
+cat("\n")
+cat("\n random slope\n")
+quantile(y_pred_lin)
+cat("\n slope squared\n")
+quantile(y_pred_sq)
+cor(data.frame(def =data$ai,int = y_pred_int,lin = y_pred_lin,sq = y_pred_sq))
+```
+## Prediction Comparison
+```{r}
+
+plot(0:100,quantile(data$ai,(0:100)*0.01),type = "l", lwd = 3,
+      xlab = "Percent", cex.lab = 1.8,
+     ylab = "Estimation")
+lines(quantile(y_pred_int,(0:100)*0.01), col = 2,lty = 2, lwd = 3)
+lines(quantile(y_pred_lin,(0:100)*0.01), col = 3,lty = 2, lwd = 3)
+lines(quantile(y_pred_sq,(0:100)*0.01), col = 4,lty = 2, lwd = 3)
+legend("topleft", legend = c("default", "ran intercep", "ran slope", "ran squared"),lwd = 3,
+               lty = c(1,2,2,2),col = c(1,2,3,4),
+               title = "Groups")
+
+
 ```

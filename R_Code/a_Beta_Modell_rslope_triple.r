@@ -42,24 +42,18 @@ model.function <- nimbleCode({
   #priors
   Deviance <- sum(D[1:N])
   phi ~ dunif(0,10000)
-  sigma2_b0 ~ dunif(0,10000)
-  tau_b0 <- 1/sigma2_b0
-  sigma2_b1 ~ dunif(0,10000)
-  tau_b1 <- 1/sigma2_b1
-  
-  sigma2_b2 ~ dunif(0,10000)
-  tau_b2 <- 1/sigma2_b2
-  sigma2_b3 ~ dunif(0,10000)
-  tau_b3 <- 1/sigma2_b3
-  
+  sigma_b0 ~ dgamma(0.001, 0.001)
+  sigma_b1 ~ dgamma(0.001, 0.001)
+  sigma_b2 ~ dgamma(0.001, 0.001)
+  sigma_b3 ~ dgamma(0.001, 0.001)
   beta0 ~ dnorm(0,sd = 1000)
   beta_age ~ dnorm(0,sd = 1000)
   beta_day ~ dnorm(0,sd = 1000)
   for ( i in 1:Nsubj){
-    b0[i] ~ dnorm(0,tau_b0)
-    b1[i] ~ dnorm(0,tau_b1)
-    b2[i] ~ dnorm(0,sd = sqrt(sigma_b2))
-    b3[i] ~ dnorm(0,sd = sqrt(sigma_b3))
+    b0[i] ~ dnorm(0,sd = sigma_b0)
+    b1[i] ~ dnorm(0,sd = sigma_b1)
+    b2[i] ~ dnorm(0,sd = sigma_b2)
+    b3[i] ~ dnorm(0,sd = sigma_b3)
   }
 })
 

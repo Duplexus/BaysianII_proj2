@@ -4,7 +4,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 obs_per <- as.data.frame(data %>%  group_by(id) %>%  summarise(lange = length(id)))["lange"]
 mean(unlist(as.vector(obs_per)))
-quantile(unlist(as.vector(obs_per)),c((0:10)*0.1))
+#quantile(unlist(as.vector(obs_per)),c((0:10)*0.1))
 
 ## if directly run use this lines first to get the data setup
 data1 <- readRDS("..\\data\\AIdataset_normalized.Rds")
