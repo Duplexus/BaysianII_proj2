@@ -94,6 +94,8 @@ summarise_default <- function(data){
   gelman.plot(data, confidence = 0.95)
   cat("\n Autocorrelation of the variables \n")
   autocorr.diag(data)
+  cat("\n Denseplots \n")
+  densplot(data)
 }
 
 "

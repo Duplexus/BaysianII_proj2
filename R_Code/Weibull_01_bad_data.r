@@ -40,14 +40,13 @@ model.function <- nimbleCode({
 #Monitored Variables
 parameters <-c("beta0", "beta1", "beta2","scale")
 
-runjags.options(method = "rjparallel")
 #Set Up Model
 
 weibull_e03 <- nimbleMCMC(
   code = model.function, constants = model.constants,
   data = model.data, inits = model.inits,
-  monitors = parameters, nchains = 3, niter = 5000,
-  nburnin = 2000, thin = 1, setSeed = c(1,2,3),
+  monitors = parameters, nchains = 3, niter = 700,
+  nburnin = 500, thin = 1, setSeed = c(1,2,3),
   samplesAsCodaMCMC = T, samples = T, 
   WAIC = T ) 
 summary(weibull_e03$samples)

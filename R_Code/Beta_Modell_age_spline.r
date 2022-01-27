@@ -67,4 +67,3 @@ t_1 <- Sys.time()
 time_linear <- t_1 - t_0
 time_linear
 saveRDS(ai_spline_age, file = "..\\data\\mcmc_res\\ai_spline_age.Rds")
-

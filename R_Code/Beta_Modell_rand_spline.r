@@ -62,4 +62,10 @@ beta_rand <- nimbleMCMC(
   WAIC = T ) # get the WAIC
 
 saveRDS(beta_rand, file = "..\\data\\mcmc_res\\beta_rand.rds")
+plot(10:100,dgamma(10:100,0.001, 0.001),type = "l")
+
+
+sigma_b0 <- runif(1000,0,10000)
+tau_b0 <- 1/sigma_b0
+hist(1/(tau_b0))
 

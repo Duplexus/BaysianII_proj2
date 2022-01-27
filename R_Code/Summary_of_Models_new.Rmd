@@ -26,7 +26,7 @@ source("helpfunctions.r")
 #source("Beta_Modell.r")
 #result ist beta_rand
 beta_rand <- readRDS("..\\data\\mcmc_res\\beta_rand.rds")
-ai_beta <- subset_coda_params(data = beta_rand$samples, variable = c("beta0", "beta1", "beta2","sigma_b0","phi"))
+ai_beta <- subset_coda_params(data = beta_rand$samples, variable = c("beta0", "beta_day", "beta_age","sigma_b0","phi"))
 beta_rand$WAIC$WAIC
 summarise_default(ai_beta)
 
@@ -760,6 +760,8 @@ cat("Data \n")
 quantile(data$ai)
 cat("\n only random intercept\n")
 quantile(y_pred_int)
+saveRDS(y_pred_int, file = "..\\data\\pred_ai.Rds")
+
 cat("\n")
 cat("\n random slope\n")
 quantile(y_pred_lin)
